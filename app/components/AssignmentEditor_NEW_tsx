@@ -1,0 +1,276 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { Assignment, ReadingSupports } from "../types";
+
+import AssignmentInfoCard from "./AssignmentInfoCard";
+import PassageEditorCard from "./PassageEditorCard";
+import VocabularyEditorCard from "./VocabularyEditorCard";
+import QuoteBankEditorCard from "./QuoteBankEditorCard";
+import TeacherHintsEditorCard from "./TeacherHintsEditorCard";
+import ReadingSupportsEditorCard from "./ReadingSupportsEditorCard";
+
+type Props = {
+  onSaveAssignment: (assignment: Assignment) => void;
+  editingAssignment?: Assignment | null;
+  onCancelEdit?: () => void;
+};
+
+const defaultReadingSupports: ReadingSupports = {
+  readPassage: true,
+  chunkPassage: true,
+  largerText: false,
+  dyslexiaFont: false,
+  focusMode: false,
+  highlightReading: false,
+  speechToText: false,
+  autoplayPassage: false,
+  readingSpeed: "normal",
+};
+
+function listToText(items: string[]) {
+  return items.join("\n");
+}
+
+function splitList(text: string) {
+  return text
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export default function AssignmentEditor({
+  onSaveAssignment,
+  editingAssignment = null,
+  onCancelEdit,
+}: Props) {
+  const [openCard, setOpenCard] = useState("assignment");
+
+  const [title, setTitle] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [directions, setDirections] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [passage, setPassage] = useState("");
+  const [vocabularyText, setVocabularyText] = useState("");
+  const [quotesText, setQuotesText] = useState("");
+  const [hintsText, setHintsText] = useState("");
+
+  const [readingSupports, setReadingSupports] =
+    useState<ReadingSupports>(defaultReadingSupports);
+
+  const isEditing = editingAssignment !== null;
+
+  useEffect(() => {
+    if (editingAssignment) {
+      setTitle(editingAssignment.title);
+      setPrompt(editingAssignment.prompt);
+      setDirections(editingAssignment.directions);
+      setDueDate(editingAssignment.dueDate);
+      setPassage(editingAssignment.passage);
+
+      setVocabularyText(listToText(editingAssignment.vocabulary));
+      setQuotesText(listToText(editingAssignment.quotes));
+      setHintsText(listToText(editingAssignment.hints));
+
+      setReadingSupports(editingAssignment.readingSupports);
+
+      setOpenCard("assignment");
+
+      return;
+    }
+
+    const savedDraft = localStorage.getItem("writewise-lesson-draft");
+
+    if (!savedDraft) return;
+
+    const draft = JSON.parse(savedDraft);
+
+    setTitle(draft.title || "");
+    setPrompt(draft.prompt || "");
+    setDirections(draft.directions || "");
+    setDueDate(draft.dueDate || "");
+    setPassage(draft.passage || "");
+    setVocabularyText(draft.vocabularyText || "");
+    setQuotesText(draft.quotesText || "");
+    setHintsText(draft.hintsText || "");
+
+    if (draft.readingSupports) {
+      setReadingSupports(draft.readingSupports);
+    }
+  }, [editingAssignment]);
+
+  useEffect(() => {
+    if (isEditing) return;
+
+    localStorage.setItem(
+      "writewise-lesson-draft",
+      JSON.stringify({
+        title,
+        prompt,
+        directions,
+        dueDate,
+        passage,
+        vocabularyText,
+        quotesText,
+        hintsText,
+        readingSupports,
+      })
+    );
+  }, [
+    title,
+    prompt,
+    directions,
+    dueDate,
+    passage,
+    vocabularyText,
+    quotesText,
+    hintsText,
+    readingSupports,
+    isEditing,
+  ]);
+
+  function clearForm() {
+    setTitle("");
+    setPrompt("");
+    setDirections("");
+    setDueDate("");
+    setPassage("");
+    setVocabularyText("");
+    setQuotesText("");
+    setHintsText("");
+    setReadingSupports(defaultReadingSupports);
+    setOpenCard("assignment");
+  }
+
+  function saveAssignment() {
+    const assignment: Assignment = {
+      id: editingAssignment
+        ? editingAssignment.id
+        : Date.now().toString(),
+
+      title,
+      prompt,
+      directions,
+      dueDate,
+      passage,
+
+      vocabulary: splitList(vocabularyText),
+      quotes: splitList(quotesText),
+      hints: splitList(hintsText),
+
+      readingSupports,
+    };
+
+    onSaveAssignment(assignment);
+
+    if (!isEditing) {
+      localStorage.removeItem("writewise-lesson-draft");
+    }
+
+    clearForm();
+
+    if (isEditing && onCancelEdit) {
+      onCancelEdit();
+    }
+  }
+    return (
+    <div>
+      <div style={draftNotice}>
+        {isEditing
+          ? "✏️ Editing assignment. Save changes when finished."
+          : "✅ Lesson draft saves automatically."}
+      </div>
+
+      <AssignmentInfoCard
+        isOpen={openCard === "assignment"}
+        isComplete={!!(title && prompt && directions)}
+        onClick={() => setOpenCard("assignment")}
+        title={title}
+        prompt={prompt}
+        directions={directions}
+        dueDate={dueDate}
+        setTitle={setTitle}
+        setPrompt={setPrompt}
+        setDirections={setDirections}
+        setDueDate={setDueDate}
+      />
+
+      <PassageEditorCard
+        isOpen={openCard === "passage"}
+        isComplete={!!passage}
+        onClick={() => setOpenCard("passage")}
+        passage={passage}
+        setPassage={setPassage}
+      />
+
+      <VocabularyEditorCard
+        isOpen={openCard === "vocabulary"}
+        isComplete={!!vocabularyText}
+        onClick={() => setOpenCard("vocabulary")}
+        vocabularyText={vocabularyText}
+        setVocabularyText={setVocabularyText}
+      />
+
+      <QuoteBankEditorCard
+        isOpen={openCard === "quotes"}
+        isComplete={!!quotesText}
+        onClick={() => setOpenCard("quotes")}
+        quotesText={quotesText}
+        setQuotesText={setQuotesText}
+      />
+            <TeacherHintsEditorCard
+        isOpen={openCard === "hints"}
+        isComplete={!!hintsText}
+        onClick={() => setOpenCard("hints")}
+        hintsText={hintsText}
+        setHintsText={setHintsText}
+      />
+
+      <ReadingSupportsEditorCard
+        isOpen={openCard === "supports"}
+        onClick={() => setOpenCard("supports")}
+        readingSupports={readingSupports}
+        setReadingSupports={setReadingSupports}
+      />
+
+      <button onClick={saveAssignment} style={publishButton}>
+        {isEditing ? "Save Changes" : "Save Assignment"}
+      </button>
+
+      {isEditing && onCancelEdit && (
+        <button onClick={onCancelEdit} style={cancelButton}>
+          Cancel Edit
+        </button>
+      )}
+    </div>
+  );
+}
+
+const draftNotice = {
+  background: "#eef5ec",
+  padding: 16,
+  borderRadius: 16,
+  fontSize: 18,
+  marginBottom: 18,
+};
+
+const publishButton = {
+  width: "100%",
+  padding: 24,
+  fontSize: 24,
+  borderRadius: 18,
+  background: "#6b8f71",
+  color: "white",
+  cursor: "pointer",
+  marginTop: 24,
+};
+
+const cancelButton = {
+  width: "100%",
+  padding: 18,
+  fontSize: 20,
+  borderRadius: 16,
+  background: "#f1f1f1",
+  cursor: "pointer",
+  marginTop: 12,
+};
