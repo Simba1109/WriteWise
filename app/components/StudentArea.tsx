@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import type { Assignment, StudentWork } from "../types";
+import {
+  blankStudentWork,
+  loadStudentWork,
+  saveStudentWork as saveWorkToStore,
+} from "../writewiseStore";
 import WelcomeCard from "./WelcomeCard";
 import AudioDirections from "./AudioDirections";
 import ProgressTracker from "./ProgressTracker";
@@ -22,19 +27,6 @@ type Props = {
   onBack: () => void;
 };
 
-const blankWork: StudentWork = {
-  restate: "",
-  answer: "",
-  cite: "",
-  explain: "",
-  sum: "",
-  finalParagraph: "",
-};
-
-function getStudentWorkKey(studentName: string, assignmentId: string) {
-  return `writewise-work-${studentName.toLowerCase().trim()}-${assignmentId}`;
-}
-
 export default function StudentArea({
   studentName,
   assignments,
@@ -44,31 +36,20 @@ export default function StudentArea({
     useState<Assignment | null>(null);
 
   const [writing, setWriting] = useState("");
-  const [savedWork, setSavedWork] = useState<StudentWork | null>(null);
+  const [savedWork, setSavedWork] = useState<StudentWork>(blankStudentWork);
 
   function openAssignment(assignment: Assignment) {
-    const key = getStudentWorkKey(studentName, assignment.id);
-    const saved = localStorage.getItem(key);
+    const work = loadStudentWork(studentName, assignment.id);
 
-    if (saved) {
-      const work: StudentWork = JSON.parse(saved);
-      setSavedWork(work);
-      setWriting(work.finalParagraph);
-    } else {
-      setSavedWork(blankWork);
-      setWriting("");
-    }
-
+    setSavedWork(work);
+    setWriting(work.finalParagraph);
     setSelectedAssignment(assignment);
   }
 
   function saveStudentWork(work: StudentWork) {
     if (!selectedAssignment) return;
 
-    const key = getStudentWorkKey(studentName, selectedAssignment.id);
-
-    localStorage.setItem(key, JSON.stringify(work));
-
+    saveWorkToStore(studentName, selectedAssignment.id, work);
     setSavedWork(work);
     setWriting(work.finalParagraph);
   }
@@ -142,6 +123,7 @@ export default function StudentArea({
             />
 
             <RacesWorkspace
+              key={`${selectedAssignment.id}-${savedWork.teacherFeedback}-${savedWork.feedbackSeen}`}
               prompt={selectedAssignment.prompt}
               vocabulary={selectedAssignment.vocabulary}
               quotes={selectedAssignment.quotes}

@@ -30,7 +30,7 @@ function getStatus(progress: number) {
   return "Not Started";
 }
 
-function getSavedStudentWork() {
+function getSavedStudentWork(assignments: Assignment[]) {
   const students: {
     studentName: string;
     assignmentId: string;
@@ -48,13 +48,22 @@ function getSavedStudentWork() {
     try {
       const work: StudentWork = JSON.parse(saved);
       const withoutPrefix = key.replace("writewise-work-", "");
-      const lastDash = withoutPrefix.lastIndexOf("-");
-      const studentName = withoutPrefix
-        .slice(0, lastDash)
-        .replace(/\b\w/g, (letter) => letter.toUpperCase());
-      const assignmentId = withoutPrefix.slice(lastDash + 1);
 
-      students.push({ studentName, assignmentId, work });
+      const assignment = assignments.find((item) =>
+        withoutPrefix.endsWith(`-${item.id}`)
+      );
+
+      if (!assignment) continue;
+
+      const studentName = withoutPrefix
+        .slice(0, withoutPrefix.length - assignment.id.length - 1)
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+      students.push({
+        studentName,
+        assignmentId: assignment.id,
+        work,
+      });
     } catch {
       continue;
     }
@@ -69,10 +78,15 @@ export default function TeacherDashboard({
 }: Props) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<
-    "All" | "Needs Help" | "Completed" | "In Progress" | "Not Started"
+    | "All"
+    | "Needs Help"
+    | "Unread Feedback"
+    | "Completed"
+    | "In Progress"
+    | "Not Started"
   >("All");
 
-  const savedWork = getSavedStudentWork();
+  const savedWork = getSavedStudentWork(assignments);
 
   return (
     <div style={box}>
@@ -86,35 +100,55 @@ export default function TeacherDashboard({
       />
 
       <div style={filterRow}>
-        {["All", "Needs Help", "Completed", "In Progress", "Not Started"].map(
-          (item) => (
-            <button
-              key={item}
-              onClick={() =>
-                setFilter(
-                  item as
-                    | "All"
-                    | "Needs Help"
-                    | "Completed"
-                    | "In Progress"
-                    | "Not Started"
-                )
-              }
-              style={{
-                ...filterButton,
-                background: filter === item ? "#6b8f71" : "white",
-                color: filter === item ? "white" : "black",
-              }}
-            >
-              {item}
-            </button>
-          )
-        )}
+        {[
+          "All",
+          "Needs Help",
+          "Unread Feedback",
+          "Completed",
+          "In Progress",
+          "Not Started",
+        ].map((item) => (
+          <button
+            key={item}
+            onClick={() =>
+              setFilter(
+                item as
+                  | "All"
+                  | "Needs Help"
+                  | "Unread Feedback"
+                  | "Completed"
+                  | "In Progress"
+                  | "Not Started"
+              )
+            }
+            style={{
+              ...filterButton,
+              background: filter === item ? "#6b8f71" : "white",
+              color: filter === item ? "white" : "black",
+            }}
+          >
+            {item}
+          </button>
+        ))}
       </div>
 
       {assignments.map((assignment) => {
-        const studentsForAssignment = savedWork
-          .filter((student) => student.assignmentId === assignment.id)
+        const allForAssignment = savedWork.filter(
+          (student) => student.assignmentId === assignment.id
+        );
+
+        const helpCount = allForAssignment.filter(
+          (student) => student.work.needsHelp === true
+        ).length;
+
+        const unreadFeedbackCount = allForAssignment.filter(
+          (student) =>
+            student.work.teacherFeedback &&
+            student.work.teacherFeedback.trim().length > 0 &&
+            student.work.feedbackSeen === false
+        ).length;
+
+        const studentsForAssignment = allForAssignment
           .filter((student) =>
             student.studentName.toLowerCase().includes(search.toLowerCase())
           )
@@ -125,14 +159,16 @@ export default function TeacherDashboard({
               return student.work.needsHelp === true;
             }
 
+            if (filter === "Unread Feedback") {
+              return (
+                !!student.work.teacherFeedback &&
+                student.work.teacherFeedback.trim().length > 0 &&
+                student.work.feedbackSeen === false
+              );
+            }
+
             return filter === "All" || status === filter;
           });
-
-        const helpCount = savedWork.filter(
-          (student) =>
-            student.assignmentId === assignment.id &&
-            student.work.needsHelp === true
-        ).length;
 
         return (
           <div key={assignment.id} style={assignmentBox}>
@@ -143,7 +179,12 @@ export default function TeacherDashboard({
             <p>
               {studentsForAssignment.length} student(s) shown
               {helpCount > 0 && (
-                <span style={helpBadge}> 🆘 {helpCount} need help</span>
+                <span style={helpBadge}>🆘 {helpCount} need help</span>
+              )}
+              {unreadFeedbackCount > 0 && (
+                <span style={feedbackBadge}>
+                  💬 {unreadFeedbackCount} unread feedback
+                </span>
               )}
             </p>
 
@@ -153,6 +194,11 @@ export default function TeacherDashboard({
               studentsForAssignment.map((student) => {
                 const progress = getProgress(student.work);
                 const status = getStatus(progress);
+
+                const hasUnreadFeedback =
+                  !!student.work.teacherFeedback &&
+                  student.work.teacherFeedback.trim().length > 0 &&
+                  student.work.feedbackSeen === false;
 
                 return (
                   <button
@@ -169,11 +215,14 @@ export default function TeacherDashboard({
                       border:
                         student.work.needsHelp === true
                           ? "3px solid #d9534f"
+                          : hasUnreadFeedback
+                          ? "3px solid #6b8f71"
                           : "1px solid #ccc",
                     }}
                   >
                     <div style={{ fontSize: 20, fontWeight: "bold" }}>
                       {student.work.needsHelp === true && "🆘 "}
+                      {hasUnreadFeedback && "💬 "}
                       {student.studentName}
                     </div>
 
@@ -187,8 +236,12 @@ export default function TeacherDashboard({
                     </div>
 
                     {student.work.needsHelp === true && (
-                      <div style={helpMessage}>
-                        Student requested help.
+                      <div style={helpMessage}>Student requested help.</div>
+                    )}
+
+                    {hasUnreadFeedback && (
+                      <div style={feedbackMessage}>
+                        Student has not read teacher feedback yet.
                       </div>
                     )}
 
@@ -284,10 +337,29 @@ const helpBadge = {
   fontWeight: "bold",
 };
 
+const feedbackBadge = {
+  display: "inline-block",
+  marginLeft: 10,
+  padding: "6px 10px",
+  borderRadius: 999,
+  background: "#eef5ec",
+  color: "#2f6f3a",
+  fontWeight: "bold",
+};
+
 const helpMessage = {
   marginTop: 8,
   background: "#fbeaea",
   color: "#8a1f1f",
+  padding: 10,
+  borderRadius: 10,
+  fontWeight: "bold",
+};
+
+const feedbackMessage = {
+  marginTop: 8,
+  background: "#eef5ec",
+  color: "#2f6f3a",
   padding: 10,
   borderRadius: 10,
   fontWeight: "bold",
