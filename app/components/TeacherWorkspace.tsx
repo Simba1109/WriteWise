@@ -5,6 +5,7 @@ import type { Assignment, StudentWork } from "../types";
 import TeacherDashboard from "./TeacherDashboard";
 import LessonBuilder from "./LessonBuilder";
 import TeacherReviewCenter from "./TeacherReviewCenter";
+import { saveStudentWork } from "../writewiseStore";
 
 type Props = {
   assignments: Assignment[];
@@ -22,7 +23,8 @@ export default function TeacherWorkspace({
   );
 
   const [reviewStudentName, setReviewStudentName] = useState("");
-  const [reviewAssignmentTitle, setReviewAssignmentTitle] = useState("");
+  const [reviewAssignment, setReviewAssignment] =
+    useState<Assignment | null>(null);
   const [reviewWork, setReviewWork] = useState<StudentWork | null>(null);
 
   function openStudentWork(
@@ -31,11 +33,40 @@ export default function TeacherWorkspace({
     work: StudentWork
   ) {
     setReviewStudentName(studentName);
-    setReviewAssignmentTitle(assignment.title);
+    setReviewAssignment(assignment);
     setReviewWork(work);
     setView("review");
   }
-  if (view === "review" && reviewWork) {
+
+  function resolveHelp() {
+    if (!reviewAssignment || !reviewWork) return;
+
+    const updatedWork: StudentWork = {
+      ...reviewWork,
+      needsHelp: false,
+      helpMessage: "",
+    };
+
+    saveStudentWork(reviewStudentName, reviewAssignment.id, updatedWork);
+    setReviewWork(updatedWork);
+  }
+
+  function saveFeedback(feedback: string) {
+    if (!reviewAssignment || !reviewWork) return;
+
+    const updatedWork: StudentWork = {
+      ...reviewWork,
+      teacherFeedback: feedback,
+      feedbackSeen: false,
+    };
+
+    saveStudentWork(reviewStudentName, reviewAssignment.id, updatedWork);
+    setReviewWork(updatedWork);
+
+    alert("Feedback saved.");
+  }
+
+  if (view === "review" && reviewWork && reviewAssignment) {
     return (
       <main style={page}>
         <button onClick={() => setView("dashboard")} style={backButton}>
@@ -44,8 +75,10 @@ export default function TeacherWorkspace({
 
         <TeacherReviewCenter
           studentName={reviewStudentName}
-          assignmentTitle={reviewAssignmentTitle}
+          assignmentTitle={reviewAssignment.title}
           work={reviewWork}
+          onResolveHelp={resolveHelp}
+          onSaveFeedback={saveFeedback}
         />
       </main>
     );
@@ -66,7 +99,7 @@ export default function TeacherWorkspace({
           </button>
 
           <button onClick={() => setView("builder")} style={tabButton}>
-            📝 Lesson Builder
+            📝 Assignments
           </button>
         </div>
 

@@ -31,6 +31,10 @@ export type StudentWork = {
   explain: string;
   sum: string;
   finalParagraph: string;
+  needsHelp?: boolean;
+  helpMessage?: string;
+  teacherFeedback?: string;
+  feedbackSeen?: boolean;
 };
 
 export type StudentSession = {

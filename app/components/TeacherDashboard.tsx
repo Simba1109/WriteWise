@@ -30,7 +30,7 @@ function getStatus(progress: number) {
   return "Not Started";
 }
 
-function getSavedStudentWork(assignments: Assignment[]) {
+function getSavedStudentWork() {
   const students: {
     studentName: string;
     assignmentId: string;
@@ -48,22 +48,13 @@ function getSavedStudentWork(assignments: Assignment[]) {
     try {
       const work: StudentWork = JSON.parse(saved);
       const withoutPrefix = key.replace("writewise-work-", "");
-
-      const assignment = assignments.find((item) =>
-        withoutPrefix.endsWith(`-${item.id}`)
-      );
-
-      if (!assignment) continue;
-
+      const lastDash = withoutPrefix.lastIndexOf("-");
       const studentName = withoutPrefix
-        .slice(0, withoutPrefix.length - assignment.id.length - 1)
+        .slice(0, lastDash)
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
+      const assignmentId = withoutPrefix.slice(lastDash + 1);
 
-      students.push({
-        studentName,
-        assignmentId: assignment.id,
-        work,
-      });
+      students.push({ studentName, assignmentId, work });
     } catch {
       continue;
     }
@@ -81,7 +72,7 @@ export default function TeacherDashboard({
     "All" | "Needs Help" | "Completed" | "In Progress" | "Not Started"
   >("All");
 
-  const savedWork = getSavedStudentWork(assignments);
+  const savedWork = getSavedStudentWork();
 
   return (
     <div style={box}>
@@ -122,15 +113,8 @@ export default function TeacherDashboard({
       </div>
 
       {assignments.map((assignment) => {
-        const allForAssignment = savedWork.filter(
-          (student) => student.assignmentId === assignment.id
-        );
-
-        const helpCount = allForAssignment.filter(
-          (student) => student.work.needsHelp === true
-        ).length;
-
-        const studentsForAssignment = allForAssignment
+        const studentsForAssignment = savedWork
+          .filter((student) => student.assignmentId === assignment.id)
           .filter((student) =>
             student.studentName.toLowerCase().includes(search.toLowerCase())
           )
@@ -144,6 +128,12 @@ export default function TeacherDashboard({
             return filter === "All" || status === filter;
           });
 
+        const helpCount = savedWork.filter(
+          (student) =>
+            student.assignmentId === assignment.id &&
+            student.work.needsHelp === true
+        ).length;
+
         return (
           <div key={assignment.id} style={assignmentBox}>
             <h3 style={{ fontSize: 24, marginTop: 0 }}>
@@ -153,7 +143,7 @@ export default function TeacherDashboard({
             <p>
               {studentsForAssignment.length} student(s) shown
               {helpCount > 0 && (
-                <span style={helpBadge}>🆘 {helpCount} need help</span>
+                <span style={helpBadge}> 🆘 {helpCount} need help</span>
               )}
             </p>
 
@@ -197,7 +187,9 @@ export default function TeacherDashboard({
                     </div>
 
                     {student.work.needsHelp === true && (
-                      <div style={helpMessage}>Student requested help.</div>
+                      <div style={helpMessage}>
+                        Student requested help.
+                      </div>
                     )}
 
                     <div style={progressTrack}>

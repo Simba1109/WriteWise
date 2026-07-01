@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { StudentWork } from "../types";
+import { blankStudentWork, cleanStudentWork } from "../writewiseStore";
 import RacesCard from "./RacesCard";
 
 type Props = {
@@ -24,7 +25,11 @@ const sections = [
     subtitle: "Say the prompt in your own words.",
     color: "#d8ecff",
     dark: "#1f5f8b",
-    starters: ["The prompt is asking me to...", "This question is about...", "I will explain..."],
+    starters: [
+      "The prompt is asking me to...",
+      "This question is about...",
+      "I will explain...",
+    ],
   },
   {
     key: "answer" as PartKey,
@@ -42,7 +47,11 @@ const sections = [
     subtitle: "Use proof from the text.",
     color: "#fff1b8",
     dark: "#9a7414",
-    starters: ["One example is...", "The text says...", "According to the passage..."],
+    starters: [
+      "One example is...",
+      "The text says...",
+      "According to the passage...",
+    ],
   },
   {
     key: "explain" as PartKey,
@@ -60,18 +69,13 @@ const sections = [
     subtitle: "End with a final thought.",
     color: "#ffdcdc",
     dark: "#a94444",
-    starters: ["Overall,...", "In conclusion,...", "This is important because..."],
+    starters: [
+      "Overall,...",
+      "In conclusion,...",
+      "This is important because...",
+    ],
   },
 ];
-
-const blankWork: StudentWork = {
-  restate: "",
-  answer: "",
-  cite: "",
-  explain: "",
-  sum: "",
-  finalParagraph: "",
-};
 
 export default function RacesWorkspace({
   prompt,
@@ -83,17 +87,30 @@ export default function RacesWorkspace({
   hints = [],
 }: Props) {
   const [open, setOpen] = useState<PartKey>("restate");
-  const [work, setWork] = useState<StudentWork>(blankWork);
+  const [work, setWork] = useState<StudentWork>(blankStudentWork);
 
   useEffect(() => {
-    if (savedWork) {
-      setWork(savedWork);
-      setWriting(savedWork.finalParagraph);
-    }
+    const loadedWork = savedWork
+      ? cleanStudentWork(savedWork)
+      : blankStudentWork;
+
+    setWork(loadedWork);
+    setWriting(loadedWork.finalParagraph);
   }, [savedWork, setWriting]);
 
   function buildParagraph(updated: StudentWork) {
     return `${updated.restate} ${updated.answer} ${updated.cite} ${updated.explain} ${updated.sum}`.trim();
+  }
+
+  function saveUpdatedWork(updatedWork: StudentWork) {
+    const cleaned = cleanStudentWork(updatedWork);
+
+    setWork(cleaned);
+    setWriting(cleaned.finalParagraph);
+
+    if (onWorkChange) {
+      onWorkChange(cleaned);
+    }
   }
 
   function update(part: PartKey, value: string) {
@@ -102,19 +119,33 @@ export default function RacesWorkspace({
       [part]: value,
     };
 
-    const finalParagraph = buildParagraph(updated);
-
-    const updatedWork = {
+    saveUpdatedWork({
       ...updated,
-      finalParagraph,
-    };
+      finalParagraph: buildParagraph(updated),
+    });
+  }
 
-    setWork(updatedWork);
-    setWriting(finalParagraph);
+  function requestHelp() {
+    saveUpdatedWork({
+      ...work,
+      needsHelp: true,
+      helpMessage: "Student requested help.",
+    });
+  }
 
-    if (onWorkChange) {
-      onWorkChange(updatedWork);
-    }
+  function clearHelp() {
+    saveUpdatedWork({
+      ...work,
+      needsHelp: false,
+      helpMessage: "",
+    });
+  }
+
+  function markFeedbackSeen() {
+    saveUpdatedWork({
+      ...work,
+      feedbackSeen: true,
+    });
   }
 
   return (
@@ -129,6 +160,42 @@ export default function RacesWorkspace({
         <div style={goalBox}>
           ⭐ Goal: Use every part of R.A.C.E.S. to build one strong paragraph.
         </div>
+
+        <div style={helpBox}>
+          {work.needsHelp ? (
+            <>
+              <div style={helpSent}>🆘 Help request sent to teacher.</div>
+
+              <button onClick={clearHelp} style={helpButton}>
+                I do not need help anymore
+              </button>
+            </>
+          ) : (
+            <button onClick={requestHelp} style={helpButton}>
+              🆘 I Need Help
+            </button>
+          )}
+        </div>
+
+        {work.teacherFeedback && work.teacherFeedback.trim().length > 0 && (
+          <div style={feedbackBox}>
+            <h3 style={{ marginTop: 0 }}>
+              {work.feedbackSeen === false
+                ? "💬 New Teacher Feedback"
+                : "💬 Teacher Feedback"}
+            </h3>
+
+            <p style={{ fontSize: 20, lineHeight: 1.5 }}>
+              {work.teacherFeedback}
+            </p>
+
+            {work.feedbackSeen === false && (
+              <button onClick={markFeedbackSeen} style={feedbackButton}>
+                I read this feedback
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {sections.map((section) => (
@@ -160,7 +227,7 @@ const promptBox = {
   border: "5px solid #b58b2a",
   borderRadius: 28,
   padding: 28,
-  marginBottom: 32,
+  marginBottom: 24,
   boxShadow: "0 8px 18px rgba(0,0,0,.12)",
 };
 
@@ -170,4 +237,43 @@ const goalBox = {
   borderRadius: 16,
   fontSize: 20,
   marginTop: 18,
+};
+
+const helpBox = {
+  background: "#ffe0e0",
+  border: "4px solid #d9534f",
+  borderRadius: 16,
+  padding: 18,
+  marginTop: 20,
+};
+
+const helpSent = {
+  fontSize: 22,
+  fontWeight: "bold",
+  marginBottom: 10,
+};
+
+const helpButton = {
+  width: "100%",
+  padding: 18,
+  borderRadius: 14,
+  fontSize: 22,
+  cursor: "pointer",
+  fontWeight: "bold",
+};
+
+const feedbackBox = {
+  background: "#eef5ec",
+  border: "3px solid #6b8f71",
+  borderRadius: 16,
+  padding: 18,
+  marginTop: 20,
+};
+
+const feedbackButton = {
+  width: "100%",
+  padding: 16,
+  borderRadius: 14,
+  fontSize: 20,
+  cursor: "pointer",
 };
