@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Assignment, StudentWork } from "../types";
 
 type Props = {
@@ -11,31 +12,25 @@ type Props = {
   ) => void;
 };
 
-function getStudentWorkKey(studentName: string, assignmentId: string) {
-  return `writewise-work-${studentName.toLowerCase().trim()}-${assignmentId}`;
-}
-
 function getProgress(work: StudentWork) {
-  const parts = [
+  const completed = [
     work.restate,
     work.answer,
     work.cite,
     work.explain,
     work.sum,
-  ];
-
-  const completed = parts.filter((part) => part.trim().length > 0).length;
+  ].filter((part) => part.trim().length > 0).length;
 
   return Math.round((completed / 5) * 100);
 }
 
 function getStatus(progress: number) {
-  if (progress === 100) return "✅ Completed";
-  if (progress > 0) return "🟡 In Progress";
-  return "⚪ Not Started";
+  if (progress === 100) return "Completed";
+  if (progress > 0) return "In Progress";
+  return "Not Started";
 }
 
-function getSavedStudentWork() {
+function getSavedStudentWork(assignments: Assignment[]) {
   const students: {
     studentName: string;
     assignmentId: string;
@@ -52,17 +47,21 @@ function getSavedStudentWork() {
 
     try {
       const work: StudentWork = JSON.parse(saved);
-
       const withoutPrefix = key.replace("writewise-work-", "");
-      const lastDash = withoutPrefix.lastIndexOf("-");
+
+      const assignment = assignments.find((item) =>
+        withoutPrefix.endsWith(`-${item.id}`)
+      );
+
+      if (!assignment) continue;
+
       const studentName = withoutPrefix
-        .slice(0, lastDash)
+        .slice(0, withoutPrefix.length - assignment.id.length - 1)
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
-      const assignmentId = withoutPrefix.slice(lastDash + 1);
 
       students.push({
         studentName,
-        assignmentId,
+        assignmentId: assignment.id,
         work,
       });
     } catch {
@@ -77,110 +76,227 @@ export default function TeacherDashboard({
   assignments,
   onOpenStudentWork,
 }: Props) {
-  const savedWork = getSavedStudentWork();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<
+    "All" | "Needs Help" | "Completed" | "In Progress" | "Not Started"
+  >("All");
+
+  const savedWork = getSavedStudentWork(assignments);
 
   return (
-    <div
-      style={{
-        background: "white",
-        border: "2px solid #ddd",
-        borderRadius: 22,
-        padding: 28,
-        marginBottom: 24,
-      }}
-    >
+    <div style={box}>
       <h2 style={{ marginTop: 0 }}>📚 Teacher Dashboard</h2>
 
-      <p style={{ fontSize: 20 }}>
-        Review students who have started assignments.
-      </p>
-      {assignments.length === 0 ? (
-        <p>No assignments published yet.</p>
-      ) : (
-        assignments.map((assignment) => {
-          const studentsForAssignment = savedWork.filter(
-            (student) => student.assignmentId === assignment.id
-          );
+      <input
+        placeholder="Search student name..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={searchBox}
+      />
 
-          return (
-            <div
-              key={assignment.id}
+      <div style={filterRow}>
+        {["All", "Needs Help", "Completed", "In Progress", "Not Started"].map(
+          (item) => (
+            <button
+              key={item}
+              onClick={() =>
+                setFilter(
+                  item as
+                    | "All"
+                    | "Needs Help"
+                    | "Completed"
+                    | "In Progress"
+                    | "Not Started"
+                )
+              }
               style={{
-                background: "#f9f9f9",
-                border: "2px solid #ddd",
-                borderRadius: 18,
-                padding: 20,
-                marginTop: 18,
+                ...filterButton,
+                background: filter === item ? "#6b8f71" : "white",
+                color: filter === item ? "white" : "black",
               }}
             >
-              <h3 style={{ fontSize: 24, marginTop: 0 }}>
-                📘 {assignment.title}
-              </h3>
+              {item}
+            </button>
+          )
+        )}
+      </div>
 
-              <p style={{ fontSize: 18 }}>
-                {studentsForAssignment.length} student(s) have started this assignment.
-              </p>
+      {assignments.map((assignment) => {
+        const allForAssignment = savedWork.filter(
+          (student) => student.assignmentId === assignment.id
+        );
 
-              {studentsForAssignment.length === 0 ? (
-                <p>No student work yet.</p>
-              ) : (
-                studentsForAssignment.map((student) => {
-                  const progress = getProgress(student.work);
+        const helpCount = allForAssignment.filter(
+          (student) => student.work.needsHelp === true
+        ).length;
 
-                  return (
-                    <button
-                      key={`${student.studentName}-${assignment.id}`}
-                      onClick={() =>
-                        onOpenStudentWork(
-                          student.studentName,
-                          assignment,
-                          student.work
-                        )
-                      }
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        padding: 16,
-                        marginTop: 12,
-                        borderRadius: 14,
-                        border: "1px solid #ccc",
-                        background: "white",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div style={{ fontSize: 20, fontWeight: "bold" }}>
-                        {student.studentName}
-                      </div>
+        const studentsForAssignment = allForAssignment
+          .filter((student) =>
+            student.studentName.toLowerCase().includes(search.toLowerCase())
+          )
+          .filter((student) => {
+            const status = getStatus(getProgress(student.work));
 
-                      <div style={{ fontSize: 17, marginTop: 6 }}>
-                        {getStatus(progress)} — {progress}%
-                      </div>
+            if (filter === "Needs Help") {
+              return student.work.needsHelp === true;
+            }
 
+            return filter === "All" || status === filter;
+          });
+
+        return (
+          <div key={assignment.id} style={assignmentBox}>
+            <h3 style={{ fontSize: 24, marginTop: 0 }}>
+              📘 {assignment.title}
+            </h3>
+
+            <p>
+              {studentsForAssignment.length} student(s) shown
+              {helpCount > 0 && (
+                <span style={helpBadge}>🆘 {helpCount} need help</span>
+              )}
+            </p>
+
+            {studentsForAssignment.length === 0 ? (
+              <p>No matching student work.</p>
+            ) : (
+              studentsForAssignment.map((student) => {
+                const progress = getProgress(student.work);
+                const status = getStatus(progress);
+
+                return (
+                  <button
+                    key={`${student.studentName}-${assignment.id}`}
+                    onClick={() =>
+                      onOpenStudentWork(
+                        student.studentName,
+                        assignment,
+                        student.work
+                      )
+                    }
+                    style={{
+                      ...studentButton,
+                      border:
+                        student.work.needsHelp === true
+                          ? "3px solid #d9534f"
+                          : "1px solid #ccc",
+                    }}
+                  >
+                    <div style={{ fontSize: 20, fontWeight: "bold" }}>
+                      {student.work.needsHelp === true && "🆘 "}
+                      {student.studentName}
+                    </div>
+
+                    <div style={{ fontSize: 17, marginTop: 6 }}>
+                      {status === "Completed"
+                        ? "✅ Completed"
+                        : status === "In Progress"
+                        ? "🟡 In Progress"
+                        : "⚪ Not Started"}{" "}
+                      — {progress}%
+                    </div>
+
+                    {student.work.needsHelp === true && (
+                      <div style={helpMessage}>Student requested help.</div>
+                    )}
+
+                    <div style={progressTrack}>
                       <div
                         style={{
-                          background: "#ddd",
-                          height: 12,
-                          borderRadius: 999,
-                          overflow: "hidden",
-                          marginTop: 10,
+                          ...progressBar,
+                          width: `${progress}%`,
                         }}
-                      >
-                        <div
-                          style={{
-                            width: `${progress}%`,
-                            height: "100%",
-                            background: "#6b8f71",
-                          }}
-                        />
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          );
-        })
-      )}
+                      />
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
+
+const box = {
+  background: "white",
+  border: "2px solid #ddd",
+  borderRadius: 22,
+  padding: 28,
+  marginBottom: 24,
+};
+
+const searchBox = {
+  width: "100%",
+  padding: 16,
+  fontSize: 20,
+  borderRadius: 14,
+  border: "1px solid #ccc",
+  marginBottom: 16,
+};
+
+const filterRow = {
+  display: "flex",
+  gap: 10,
+  flexWrap: "wrap" as const,
+  marginBottom: 20,
+};
+
+const filterButton = {
+  padding: "12px 16px",
+  borderRadius: 999,
+  border: "1px solid #ccc",
+  cursor: "pointer",
+  fontSize: 16,
+};
+
+const assignmentBox = {
+  background: "#f9f9f9",
+  border: "2px solid #ddd",
+  borderRadius: 18,
+  padding: 20,
+  marginTop: 18,
+};
+
+const studentButton = {
+  width: "100%",
+  textAlign: "left" as const,
+  padding: 16,
+  marginTop: 12,
+  borderRadius: 14,
+  background: "white",
+  cursor: "pointer",
+};
+
+const progressTrack = {
+  background: "#ddd",
+  height: 12,
+  borderRadius: 999,
+  overflow: "hidden",
+  marginTop: 10,
+};
+
+const progressBar = {
+  height: "100%",
+  background: "#6b8f71",
+};
+
+const helpBadge = {
+  display: "inline-block",
+  marginLeft: 10,
+  padding: "6px 10px",
+  borderRadius: 999,
+  background: "#fbeaea",
+  color: "#8a1f1f",
+  fontWeight: "bold",
+};
+
+const helpMessage = {
+  marginTop: 8,
+  background: "#fbeaea",
+  color: "#8a1f1f",
+  padding: 10,
+  borderRadius: 10,
+  fontWeight: "bold",
+};
