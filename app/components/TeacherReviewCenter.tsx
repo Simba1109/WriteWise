@@ -12,6 +12,19 @@ type Props = {
   onSaveFeedback?: (feedback: string) => void;
 };
 
+const commentBank = [
+  "Excellent job using text evidence!",
+  "Great restatement of the prompt.",
+  "Answer the question more completely.",
+  "Add stronger evidence from the passage.",
+  "Explain HOW your evidence supports your answer.",
+  "Finish with a stronger conclusion.",
+  "Remember to use complete sentences.",
+  "Check spelling and capitalization.",
+  "Excellent improvement!",
+  "Keep going—you are making progress!",
+];
+
 export default function TeacherReviewCenter({
   studentName,
   assignmentTitle,
@@ -28,6 +41,14 @@ export default function TeacherReviewCenter({
     work.explain,
     work.sum,
   ].filter((part) => part.trim().length > 0).length;
+
+  function addComment(comment: string) {
+    setFeedback((previous) =>
+      previous.trim().length === 0
+        ? comment
+        : `${previous}\n\n${comment}`
+    );
+  }
 
   return (
     <div style={page}>
@@ -67,10 +88,22 @@ export default function TeacherReviewCenter({
         <div style={feedbackBox}>
           <h2>💬 Teacher Feedback</h2>
 
+          <div style={bankGrid}>
+            {commentBank.map((comment) => (
+              <button
+                key={comment}
+                onClick={() => addComment(comment)}
+                style={bankButton}
+              >
+                {comment}
+              </button>
+            ))}
+          </div>
+
           <textarea
             placeholder="Type feedback, encouragement, or revision notes here..."
             value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
+            onChange={(event) => setFeedback(event.target.value)}
             style={textarea}
           />
 
@@ -87,7 +120,6 @@ export default function TeacherReviewCenter({
     </div>
   );
 }
-
 const page = {
   background: "#f5efe4",
   minHeight: "100vh",
@@ -138,9 +170,24 @@ const feedbackBox = {
   marginTop: 24,
 };
 
+const bankGrid = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 10,
+  marginBottom: 18,
+};
+
+const bankButton = {
+  padding: 12,
+  borderRadius: 10,
+  cursor: "pointer",
+  fontSize: 16,
+  textAlign: "left" as const,
+};
+
 const textarea = {
   width: "100%",
-  minHeight: 140,
+  minHeight: 150,
   padding: 16,
   fontSize: 18,
   borderRadius: 12,
