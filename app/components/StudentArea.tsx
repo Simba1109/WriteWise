@@ -20,6 +20,7 @@ import ReadingPassage from "./ReadingPassage";
 import StudentTools from "./StudentTools";
 import ToolSection from "./ToolSection";
 import StudentAssignmentLibrary from "./StudentAssignmentLibrary";
+import StudentBadges from "./StudentBadges";
 
 type Props = {
   studentName: string;
@@ -83,6 +84,12 @@ export default function StudentArea({
 
         <div style={grid}>
           <div>
+            <StudentBadges
+              studentName={studentName}
+              assignments={assignments}
+              currentWork={savedWork}
+            />
+
             <StudentTools>
               <ToolSection title="🎧 Directions">
                 <AudioDirections text={selectedAssignment.directions} />
