@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { StudentWork } from "../types";
+import { quillMessages } from "./quillMessages";
 
 type PartKey = "restate" | "answer" | "cite" | "explain" | "sum";
 
@@ -10,97 +11,111 @@ type Props = {
   work: StudentWork;
 };
 
-const stepHelp = {
-  restate: {
-    title: "Restate",
-    message:
-      "Restate the question in your own words. Do not answer it yet.",
-    hint:
-      "Try starting with: The prompt is asking me to explain...",
-  },
-  answer: {
-    title: "Answer",
-    message:
-      "Now give your clear answer. Say what you think or what you learned.",
-    hint:
-      "Try starting with: I think... or One important idea is...",
-  },
-  cite: {
-    title: "Cite Evidence",
-    message:
-      "Find proof from the passage that supports your answer.",
-    hint:
-      "Look for one sentence from the passage that proves your idea.",
-  },
-  explain: {
-    title: "Explain",
-    message:
-      "Now connect your evidence to your answer. Tell why the evidence matters.",
-    hint:
-      "Try starting with: This shows... or This proves...",
-  },
-  sum: {
-    title: "Sum Up",
-    message:
-      "Finish with one strong final thought.",
-    hint:
-      "Try starting with: Overall,... or This is important because...",
-  },
-};
-
-function isPartComplete(work: StudentWork, part: PartKey) {
+function isComplete(work: StudentWork, part: PartKey) {
   return work[part].trim().length > 0;
 }
 
-export default function QuillPanel({ activePart, work }: Props) {
+export default function QuillPanel({
+  activePart,
+  work,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState("");
 
-  const current = stepHelp[activePart];
-  const complete = isPartComplete(work, activePart);
+  const complete = isComplete(work, activePart);
 
-  function giveHint() {
-    setResponse(current.hint);
-  }
+  const current = quillMessages[activePart];
 
-  function explainStep() {
-    setResponse(current.message);
-  }
+  useEffect(() => {
+    if (complete) {
+      setResponse(current.complete);
+      return;
+    }
+
+    if (work[activePart].trim().length > 0) {
+      setResponse(current.started);
+      return;
+    }
+
+    setResponse(current.idle);
+  }, [activePart, work]);
 
   function encourage() {
     setResponse(
-      complete
-        ? "Nice work. You completed this section. You're ready for the next step."
-        : "You're making progress. Take this one sentence at a time."
+      "You're making steady progress. Take your time and keep building one idea at a time."
     );
+  }
+
+  function hint() {
+    switch (activePart) {
+      case "restate":
+        setResponse(
+          "Try beginning with 'The prompt is asking me to...' and put it into your own words."
+        );
+        break;
+
+      case "answer":
+        setResponse(
+          "Answer the question directly before worrying about evidence."
+        );
+        break;
+
+      case "cite":
+        setResponse(
+          "Look back through the passage and find one sentence that proves your answer."
+        );
+        break;
+
+      case "explain":
+        setResponse(
+          "Tell why your evidence proves your answer. Imagine explaining it to someone else."
+        );
+        break;
+
+      case "sum":
+        setResponse(
+          "Finish with one final sentence that wraps everything together."
+        );
+        break;
+    }
   }
 
   return (
     <div style={box}>
-      <button onClick={() => setOpen(!open)} style={header}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={header}
+      >
         <span>🪶 Quill</span>
+
         <span>{open ? "▲" : "▼"}</span>
       </button>
 
       {open && (
         <div style={content}>
           <div style={stepBadge}>
-            {complete ? "✅" : "✍️"} Working on: {current.title}
+            {complete ? "✅" : "✍️"} Working on{" "}
+            <strong>
+              {activePart.charAt(0).toUpperCase() +
+                activePart.slice(1)}
+            </strong>
           </div>
 
-          <p style={message}>{current.message}</p>
+          <div style={responseBox}>
+            {response}
+          </div>
 
-          {response && <div style={responseBox}>{response}</div>}
-
-          <button onClick={giveHint} style={option}>
+          <button
+            onClick={hint}
+            style={option}
+          >
             💡 Give me a hint
           </button>
 
-          <button onClick={explainStep} style={option}>
-            📚 Explain this step
-          </button>
-
-          <button onClick={encourage} style={option}>
+          <button
+            onClick={encourage}
+            style={option}
+          >
             😊 Encourage me
           </button>
         </div>
@@ -143,12 +158,6 @@ const stepBadge = {
   fontSize: 15,
   fontWeight: "bold",
   marginBottom: 12,
-};
-
-const message = {
-  fontSize: 16,
-  lineHeight: 1.5,
-  marginTop: 0,
 };
 
 const responseBox = {
