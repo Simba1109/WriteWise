@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { StudentWork } from "../types";
-import { quillMessages } from "./quillMessages";
+import { getQuillWritingCoachMessage } from "./quillMessages";
 
 type PartKey = "restate" | "answer" | "cite" | "explain" | "sum";
 
@@ -15,79 +15,36 @@ function isComplete(work: StudentWork, part: PartKey) {
   return work[part].trim().length > 0;
 }
 
-export default function QuillPanel({
-  activePart,
-  work,
-}: Props) {
+export default function QuillPanel({ activePart, work }: Props) {
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState("");
 
   const complete = isComplete(work, activePart);
 
-  const current = quillMessages[activePart];
-
   useEffect(() => {
-    if (complete) {
-      setResponse(current.complete);
-      return;
-    }
-
-    if (work[activePart].trim().length > 0) {
-      setResponse(current.started);
-      return;
-    }
-
-    setResponse(current.idle);
+    setResponse(
+      getQuillWritingCoachMessage(activePart, work[activePart])
+    );
   }, [activePart, work]);
 
   function encourage() {
     setResponse(
-      "You're making steady progress. Take your time and keep building one idea at a time."
+      complete
+        ? "Nice work. You completed this section. You're ready for the next step."
+        : "You're making steady progress. Take your time and keep building one idea at a time."
     );
   }
 
   function hint() {
-    switch (activePart) {
-      case "restate":
-        setResponse(
-          "Try beginning with 'The prompt is asking me to...' and put it into your own words."
-        );
-        break;
-
-      case "answer":
-        setResponse(
-          "Answer the question directly before worrying about evidence."
-        );
-        break;
-
-      case "cite":
-        setResponse(
-          "Look back through the passage and find one sentence that proves your answer."
-        );
-        break;
-
-      case "explain":
-        setResponse(
-          "Tell why your evidence proves your answer. Imagine explaining it to someone else."
-        );
-        break;
-
-      case "sum":
-        setResponse(
-          "Finish with one final sentence that wraps everything together."
-        );
-        break;
-    }
+    setResponse(
+      getQuillWritingCoachMessage(activePart, work[activePart])
+    );
   }
 
   return (
     <div style={box}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={header}
-      >
+      <button onClick={() => setOpen(!open)} style={header}>
         <span>🪶 Quill</span>
-
         <span>{open ? "▲" : "▼"}</span>
       </button>
 
@@ -95,27 +52,16 @@ export default function QuillPanel({
         <div style={content}>
           <div style={stepBadge}>
             {complete ? "✅" : "✍️"} Working on{" "}
-            <strong>
-              {activePart.charAt(0).toUpperCase() +
-                activePart.slice(1)}
-            </strong>
+            <strong>{activePart.charAt(0).toUpperCase() + activePart.slice(1)}</strong>
           </div>
 
-          <div style={responseBox}>
-            {response}
-          </div>
+          <div style={responseBox}>{response}</div>
 
-          <button
-            onClick={hint}
-            style={option}
-          >
-            💡 Give me a hint
+          <button onClick={hint} style={option}>
+            💡 Coach me
           </button>
 
-          <button
-            onClick={encourage}
-            style={option}
-          >
+          <button onClick={encourage} style={option}>
             😊 Encourage me
           </button>
         </div>
