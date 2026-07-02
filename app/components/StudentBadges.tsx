@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Assignment, StudentWork } from "../types";
 
 type Props = {
@@ -13,7 +14,9 @@ function getStudentWorkKey(studentName: string, assignmentId: string) {
 }
 
 function loadWork(studentName: string, assignmentId: string): StudentWork | null {
-  const saved = localStorage.getItem(getStudentWorkKey(studentName, assignmentId));
+  const saved = localStorage.getItem(
+    getStudentWorkKey(studentName, assignmentId)
+  );
 
   if (!saved) return null;
 
@@ -38,7 +41,6 @@ function isComplete(work: StudentWork | null) {
 
 function hasEvidence(work: StudentWork | null) {
   if (!work) return false;
-
   return work.cite.trim().length > 0;
 }
 
@@ -47,6 +49,8 @@ export default function StudentBadges({
   assignments,
   currentWork,
 }: Props) {
+  const [open, setOpen] = useState(false);
+
   const allWork = assignments.map((assignment) =>
     loadWork(studentName, assignment.id)
   );
@@ -56,31 +60,24 @@ export default function StudentBadges({
 
   const badges = [
     {
+      earned: isComplete(currentWork),
+      icon: "📝",
+      title: "Paragraph Perfect",
+    },
+    {
       earned: completedCount >= 1,
       icon: "🥇",
-      title: "First Assignment Completed",
-      description: "You completed your first full R.A.C.E.S. paragraph.",
+      title: "First Complete",
     },
     {
       earned: completedCount >= 3,
       icon: "🔥",
-      title: "Three Assignments Completed",
-      description: "You completed three writing assignments.",
+      title: "3 Complete",
     },
     {
       earned: evidenceCount >= 5,
       icon: "📚",
       title: "Evidence Expert",
-      description: "You used text evidence in five assignments.",
-    },
-    {
-      earned:
-        currentWork.needsHelp === false &&
-        currentWork.helpMessage === "" &&
-        isComplete(currentWork),
-      icon: "💪",
-      title: "Never Gave Up",
-      description: "You kept working and finished your paragraph.",
     },
     {
       earned:
@@ -88,38 +85,34 @@ export default function StudentBadges({
         currentWork.teacherFeedback.toLowerCase().includes("excellent"),
       icon: "⭐",
       title: "Teacher Star",
-      description: "Your teacher gave you positive feedback.",
-    },
-    {
-      earned: isComplete(currentWork),
-      icon: "📝",
-      title: "Paragraph Perfect",
-      description: "You completed all five R.A.C.E.S. sections.",
     },
   ];
 
+  const earnedBadges = badges.filter((badge) => badge.earned);
+
   return (
     <div style={box}>
-      <h2 style={{ marginTop: 0 }}>🏆 My Badges</h2>
+      <button onClick={() => setOpen(!open)} style={header}>
+        <span>🏆 My Badges</span>
+        <span>{open ? "▲" : "▼"}</span>
+      </button>
 
-      {badges.map((badge) => (
-        <div
-          key={badge.title}
-          style={{
-            ...badgeCard,
-            opacity: badge.earned ? 1 : 0.45,
-          }}
-        >
-          <div style={icon}>{badge.icon}</div>
-
-          <div>
-            <strong>{badge.title}</strong>
-            <p style={description}>
-              {badge.earned ? badge.description : "Keep working to unlock this."}
-            </p>
-          </div>
-        </div>
-      ))}
+      {open && (
+        <>
+          {earnedBadges.length === 0 ? (
+            <div style={empty}>Keep writing to earn badges.</div>
+          ) : (
+            <div style={badgeList}>
+              {earnedBadges.map((badge) => (
+                <div key={badge.title} style={badgePill}>
+                  <span style={icon}>{badge.icon}</span>
+                  <span>{badge.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -128,26 +121,46 @@ const box = {
   background: "white",
   border: "2px solid #ddd",
   borderRadius: 18,
-  padding: 18,
   marginBottom: 18,
+  overflow: "hidden",
 };
 
-const badgeCard = {
+const header = {
+  width: "100%",
+  padding: 16,
+  border: "none",
+  background: "white",
+  cursor: "pointer",
+  fontSize: 20,
+  fontWeight: "bold",
   display: "flex",
-  gap: 12,
+  justifyContent: "space-between",
   alignItems: "center",
-  background: "#f9f9f9",
-  border: "1px solid #ddd",
-  borderRadius: 14,
-  padding: 12,
+};
+
+const badgeList = {
+  padding: "0 14px 14px",
+};
+
+const badgePill = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  background: "#fff8e6",
+  border: "2px solid #e0b64b",
+  borderRadius: 12,
+  padding: "10px 12px",
   marginTop: 10,
+  fontSize: 17,
+  fontWeight: "bold",
 };
 
 const icon = {
-  fontSize: 32,
+  fontSize: 22,
 };
 
-const description = {
-  margin: "4px 0 0",
-  fontSize: 14,
+const empty = {
+  padding: 16,
+  fontSize: 16,
+  color: "#555",
 };
