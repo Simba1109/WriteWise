@@ -21,6 +21,9 @@ import StudentTools from "./StudentTools";
 import ToolSection from "./ToolSection";
 import StudentAssignmentLibrary from "./StudentAssignmentLibrary";
 import StudentBadges from "./StudentBadges";
+import QuillPanel from "./QuillPanel";
+
+type PartKey = "restate" | "answer" | "cite" | "explain" | "sum";
 
 type Props = {
   studentName: string;
@@ -38,12 +41,14 @@ export default function StudentArea({
 
   const [writing, setWriting] = useState("");
   const [savedWork, setSavedWork] = useState<StudentWork>(blankStudentWork);
+  const [activePart, setActivePart] = useState<PartKey>("restate");
 
   function openAssignment(assignment: Assignment) {
     const work = loadStudentWork(studentName, assignment.id);
 
     setSavedWork(work);
     setWriting(work.finalParagraph);
+    setActivePart("restate");
     setSelectedAssignment(assignment);
   }
 
@@ -84,6 +89,8 @@ export default function StudentArea({
 
         <div style={grid}>
           <div>
+            <QuillPanel activePart={activePart} work={savedWork} />
+
             <StudentBadges
               studentName={studentName}
               assignments={assignments}
@@ -138,6 +145,7 @@ export default function StudentArea({
               savedWork={savedWork}
               onWorkChange={saveStudentWork}
               setWriting={setWriting}
+              onActivePartChange={setActivePart}
             />
 
             <FinalParagraphBox writing={writing} />

@@ -5,17 +5,18 @@ import type { StudentWork } from "../types";
 import { blankStudentWork, cleanStudentWork } from "../writewiseStore";
 import RacesCard from "./RacesCard";
 
+type PartKey = "restate" | "answer" | "cite" | "explain" | "sum";
+
 type Props = {
   prompt: string;
   setWriting: (text: string) => void;
   onWorkChange?: (work: StudentWork) => void;
+  onActivePartChange?: (part: PartKey) => void;
   savedWork?: StudentWork | null;
   vocabulary?: string[];
   quotes?: string[];
   hints?: string[];
 };
-
-type PartKey = "restate" | "answer" | "cite" | "explain" | "sum";
 
 const sections = [
   {
@@ -81,6 +82,7 @@ export default function RacesWorkspace({
   prompt,
   setWriting,
   onWorkChange,
+  onActivePartChange,
   savedWork,
   vocabulary = [],
   quotes = [],
@@ -98,6 +100,14 @@ export default function RacesWorkspace({
     setWriting(loadedWork.finalParagraph);
   }, [savedWork, setWriting]);
 
+  function activatePart(part: PartKey) {
+    setOpen(part);
+
+    if (onActivePartChange) {
+      onActivePartChange(part);
+    }
+  }
+
   function buildParagraph(updated: StudentWork) {
     return `${updated.restate} ${updated.answer} ${updated.cite} ${updated.explain} ${updated.sum}`.trim();
   }
@@ -114,6 +124,8 @@ export default function RacesWorkspace({
   }
 
   function update(part: PartKey, value: string) {
+    activatePart(part);
+
     const updated = {
       ...work,
       [part]: value,
@@ -214,7 +226,7 @@ export default function RacesWorkspace({
           isOpen={open === section.key}
           completed={work[section.key].trim().length > 0}
           value={work[section.key]}
-          onOpen={() => setOpen(section.key)}
+          onOpen={() => activatePart(section.key)}
           onChange={update}
         />
       ))}

@@ -43,6 +43,10 @@ export default function RacesCard({
     onChange(partKey, value ? value + " " + text : text);
   }
 
+  function activateCard() {
+    onOpen();
+  }
+
   return (
     <div
       style={{
@@ -55,7 +59,7 @@ export default function RacesCard({
       }}
     >
       <button
-        onClick={onOpen}
+        onClick={activateCard}
         style={{
           width: "100%",
           padding: 22,
@@ -69,26 +73,40 @@ export default function RacesCard({
         }}
       >
         {completed ? "✅" : "⬜"} {letter} - {title}
-        <span style={{ float: "right" }}>{isOpen ? "▲" : "▼"}</span>
+        <span style={{ float: "right" }}>
+          {isOpen ? "▲" : "▼"}
+        </span>
       </button>
 
       {isOpen && (
         <div style={{ padding: 24 }}>
-          <p style={{ fontSize: 21, fontWeight: "bold" }}>{subtitle}</p>
+          <p style={{ fontSize: 21, fontWeight: "bold" }}>
+            {subtitle}
+          </p>
 
-          <div style={hintBox}>💡 {sectionHint}</div>
+          <div style={hintBox}>
+            💡 {sectionHint}
+          </div>
 
           <select
             defaultValue=""
+            onFocus={activateCard}
+            onClick={activateCard}
             onChange={(e) => {
               if (e.target.value) addText(e.target.value);
               e.target.value = "";
             }}
             style={selectBox}
           >
-            <option value="">Sentence starter dropdown</option>
+            <option value="">
+              Sentence starter dropdown
+            </option>
+
             {starters.map((starter) => (
-              <option key={starter} value={starter}>
+              <option
+                key={starter}
+                value={starter}
+              >
                 {starter}
               </option>
             ))}
@@ -96,24 +114,33 @@ export default function RacesCard({
 
           <select
             defaultValue=""
+            onFocus={activateCard}
+            onClick={activateCard}
             onChange={(e) => {
               if (e.target.value) addText(e.target.value);
               e.target.value = "";
             }}
             style={selectBox}
           >
-            <option value="">Vocabulary dropdown</option>
+            <option value="">
+              Vocabulary dropdown
+            </option>
+
             {vocabulary.length === 0 ? (
-              <option value="">No vocabulary added yet</option>
+              <option value="">
+                No vocabulary added yet
+              </option>
             ) : (
               vocabulary.map((word) => (
-                <option key={word} value={word}>
+                <option
+                  key={word}
+                  value={word}
+                >
                   {word}
                 </option>
               ))
             )}
           </select>
-
           {partKey === "cite" && (
             <div style={quoteBox}>
               <strong>Quote Bank</strong>
@@ -124,7 +151,10 @@ export default function RacesCard({
                 quotes.map((quote) => (
                   <button
                     key={quote}
-                    onClick={() => addText(quote)}
+                    onClick={() => {
+                      activateCard();
+                      addText(quote);
+                    }}
                     style={quoteButton}
                   >
                     {quote}
@@ -136,7 +166,11 @@ export default function RacesCard({
 
           <textarea
             value={value}
-            onChange={(e) => onChange(partKey, e.target.value)}
+            onFocus={activateCard}
+            onClick={activateCard}
+            onChange={(e) =>
+              onChange(partKey, e.target.value)
+            }
             placeholder={`Write your ${title} sentence here...`}
             style={textArea}
           />
@@ -170,7 +204,6 @@ const quoteBox = {
   marginBottom: 16,
   fontSize: 18,
 };
-
 const quoteButton = {
   width: "100%",
   display: "block",
