@@ -30,6 +30,16 @@ function getStatus(progress: number) {
   return "Not Started";
 }
 
+function isComplete(work: StudentWork) {
+  return (
+    work.restate.trim().length > 0 &&
+    work.answer.trim().length > 0 &&
+    work.cite.trim().length > 0 &&
+    work.explain.trim().length > 0 &&
+    work.sum.trim().length > 0
+  );
+}
+
 function getSavedStudentWork(assignments: Assignment[]) {
   const students: {
     studentName: string;
@@ -70,6 +80,39 @@ function getSavedStudentWork(assignments: Assignment[]) {
   }
 
   return students;
+}
+
+function getBadgesForStudent(
+  studentName: string,
+  assignments: Assignment[],
+  currentWork: StudentWork
+) {
+  const studentWorks = getSavedStudentWork(assignments)
+    .filter((student) => student.studentName === studentName)
+    .map((student) => student.work);
+
+  const allWorks = [...studentWorks, currentWork];
+
+  const completedCount = allWorks.filter(isComplete).length;
+  const evidenceCount = allWorks.filter(
+    (work) => work.cite.trim().length > 0
+  ).length;
+
+  const hasTeacherStar = allWorks.some(
+    (work) =>
+      !!work.teacherFeedback &&
+      work.teacherFeedback.toLowerCase().includes("excellent")
+  );
+
+  const badges: string[] = [];
+
+  if (isComplete(currentWork)) badges.push("📝 Paragraph Perfect");
+  if (completedCount >= 1) badges.push("🥇 First Complete");
+  if (completedCount >= 3) badges.push("🔥 3 Complete");
+  if (evidenceCount >= 5) badges.push("📚 Evidence Expert");
+  if (hasTeacherStar) badges.push("⭐ Teacher Star");
+
+  return [...new Set(badges)];
 }
 
 export default function TeacherDashboard({
@@ -200,6 +243,12 @@ export default function TeacherDashboard({
                   student.work.teacherFeedback.trim().length > 0 &&
                   student.work.feedbackSeen === false;
 
+                const badges = getBadgesForStudent(
+                  student.studentName,
+                  assignments,
+                  student.work
+                );
+
                 return (
                   <button
                     key={`${student.studentName}-${assignment.id}`}
@@ -234,6 +283,16 @@ export default function TeacherDashboard({
                         : "⚪ Not Started"}{" "}
                       — {progress}%
                     </div>
+
+                    {badges.length > 0 && (
+                      <div style={badgeRow}>
+                        {badges.map((badge) => (
+                          <span key={badge} style={badgePill}>
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {student.work.needsHelp === true && (
                       <div style={helpMessage}>Student requested help.</div>
@@ -362,5 +421,21 @@ const feedbackMessage = {
   color: "#2f6f3a",
   padding: 10,
   borderRadius: 10,
+  fontWeight: "bold",
+};
+
+const badgeRow = {
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap" as const,
+  marginTop: 10,
+};
+
+const badgePill = {
+  background: "#fff4cf",
+  border: "2px solid #b58b2a",
+  borderRadius: 999,
+  padding: "5px 10px",
+  fontSize: 14,
   fontWeight: "bold",
 };
