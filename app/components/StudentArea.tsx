@@ -7,6 +7,7 @@ import {
   loadStudentWork,
   saveStudentWork as saveWorkToStore,
 } from "../writewiseStore";
+import { buildQuillMemory } from "./quillMemory";
 import WelcomeCard from "./WelcomeCard";
 import AudioDirections from "./AudioDirections";
 import ProgressTracker from "./ProgressTracker";
@@ -42,6 +43,14 @@ export default function StudentArea({
   const [writing, setWriting] = useState("");
   const [savedWork, setSavedWork] = useState<StudentWork>(blankStudentWork);
   const [activePart, setActivePart] = useState<PartKey>("restate");
+
+  function getAllStudentWork() {
+    return assignments.map((assignment) =>
+      loadStudentWork(studentName, assignment.id)
+    );
+  }
+
+  const quillMemory = buildQuillMemory(getAllStudentWork());
 
   function openAssignment(assignment: Assignment) {
     const work = loadStudentWork(studentName, assignment.id);
@@ -89,15 +98,18 @@ export default function StudentArea({
 
         <div style={grid}>
           <div>
-            <QuillPanel activePart={activePart} work={savedWork} />
+            <QuillPanel
+              activePart={activePart}
+              work={savedWork}
+              memory={quillMemory}
+            />
 
             <StudentBadges
               studentName={studentName}
               assignments={assignments}
               currentWork={savedWork}
             />
-
-            <StudentTools>
+                        <StudentTools>
               <ToolSection title="🎧 Directions">
                 <AudioDirections text={selectedAssignment.directions} />
               </ToolSection>

@@ -3,42 +3,52 @@
 import { useEffect, useState } from "react";
 import type { StudentWork } from "../types";
 import { getQuillWritingCoachMessage } from "./quillMessages";
+import type { QuillMemory } from "./quillMemory";
 
 type PartKey = "restate" | "answer" | "cite" | "explain" | "sum";
 
 type Props = {
   activePart: PartKey;
   work: StudentWork;
+  memory?: QuillMemory;
 };
 
 function isComplete(work: StudentWork, part: PartKey) {
   return work[part].trim().length > 0;
 }
 
-export default function QuillPanel({ activePart, work }: Props) {
+export default function QuillPanel({ activePart, work, memory }: Props) {
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState("");
 
   const complete = isComplete(work, activePart);
 
   useEffect(() => {
-    setResponse(
-      getQuillWritingCoachMessage(activePart, work[activePart])
-    );
+    setResponse(getQuillWritingCoachMessage(activePart, work[activePart]));
   }, [activePart, work]);
 
   function encourage() {
+    if (memory && memory.completedAssignments >= 3) {
+      setResponse(
+        `You've completed ${memory.completedAssignments} assignments. That shows real progress. Keep building one section at a time.`
+      );
+      return;
+    }
+
+    if (complete) {
+      setResponse(
+        "Nice work. You completed this section. You're ready for the next step."
+      );
+      return;
+    }
+
     setResponse(
-      complete
-        ? "Nice work. You completed this section. You're ready for the next step."
-        : "You're making steady progress. Take your time and keep building one idea at a time."
+      "You're making steady progress. Take your time and keep building one idea at a time."
     );
   }
 
   function hint() {
-    setResponse(
-      getQuillWritingCoachMessage(activePart, work[activePart])
-    );
+    setResponse(getQuillWritingCoachMessage(activePart, work[activePart]));
   }
 
   return (
@@ -50,9 +60,18 @@ export default function QuillPanel({ activePart, work }: Props) {
 
       {open && (
         <div style={content}>
+          {memory && memory.completedAssignments > 0 && (
+            <div style={memoryBox}>
+              Progress remembered: {memory.completedAssignments} assignment
+              {memory.completedAssignments === 1 ? "" : "s"} completed
+            </div>
+          )}
+
           <div style={stepBadge}>
             {complete ? "✅" : "✍️"} Working on{" "}
-            <strong>{activePart.charAt(0).toUpperCase() + activePart.slice(1)}</strong>
+            <strong>
+              {activePart.charAt(0).toUpperCase() + activePart.slice(1)}
+            </strong>
           </div>
 
           <div style={responseBox}>{response}</div>
@@ -94,6 +113,16 @@ const header = {
 const content = {
   padding: 16,
   borderTop: "1px solid #ddd",
+};
+
+const memoryBox = {
+  background: "#eef5ec",
+  border: "2px solid #6b8f71",
+  borderRadius: 12,
+  padding: 10,
+  fontSize: 14,
+  fontWeight: "bold",
+  marginBottom: 12,
 };
 
 const stepBadge = {
