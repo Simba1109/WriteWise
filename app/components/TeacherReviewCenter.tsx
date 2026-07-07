@@ -12,17 +12,59 @@ type Props = {
   onSaveFeedback?: (feedback: string) => void;
 };
 
-const commentBank = [
-  "Excellent job using text evidence!",
-  "Great restatement of the prompt.",
-  "Answer the question more completely.",
-  "Add stronger evidence from the passage.",
+const restateComments = [
+  "Great job restating the prompt.",
+  "Restate the prompt in your own words.",
+  "Restate the entire question.",
+  "Your restatement is too close to the prompt.",
+  "Make your restatement clearer.",
+  "Excellent beginning.",
+];
+
+const answerComments = [
+  "Great answer.",
+  "Answer the entire question.",
+  "Add more details.",
+  "Stay focused on the prompt.",
+  "Your answer is clear.",
+  "Support your answer with more thinking.",
+];
+
+const citeComments = [
+  "Excellent text evidence.",
+  "Add evidence from the passage.",
+  "Choose stronger evidence.",
+  "Introduce your quotation.",
+  "Use a quotation from the passage.",
+  "Your evidence supports your answer well.",
+];
+
+const explainComments = [
+  "Excellent explanation.",
   "Explain HOW your evidence supports your answer.",
-  "Finish with a stronger conclusion.",
-  "Remember to use complete sentences.",
-  "Check spelling and capitalization.",
+  "Tell WHY your evidence proves your answer.",
+  "Connect your evidence to your answer.",
+  "Add more explanation.",
+  "Great reasoning.",
+];
+
+const sumComments = [
+  "Excellent conclusion.",
+  "Add a concluding sentence.",
+  "End with a stronger final thought.",
+  "Restate your main idea.",
+  "Explain why your answer matters.",
+];
+
+const generalComments = [
   "Excellent improvement!",
-  "Keep going—you are making progress!",
+  "Great effort!",
+  "Keep using the R.A.C.E.S. strategy.",
+  "Use complete sentences.",
+  "Check spelling.",
+  "Check punctuation.",
+  "Add more detail.",
+  "Nice revision.",
 ];
 
 export default function TeacherReviewCenter({
@@ -43,13 +85,17 @@ export default function TeacherReviewCenter({
   ].filter((part) => part.trim().length > 0).length;
 
   function addComment(comment: string) {
+    if (!comment) return;
+
     setFeedback((previous) =>
-      previous.trim().length === 0
-        ? comment
-        : `${previous}\n\n${comment}`
+      previous.trim().length === 0 ? comment : `${previous}\n\n${comment}`
     );
   }
 
+  function handleDropdown(value: string) {
+    if (!value) return;
+    addComment(value);
+  }
   return (
     <div style={page}>
       <section style={container}>
@@ -63,7 +109,11 @@ export default function TeacherReviewCenter({
             <strong>🆘 Student requested help.</strong>
 
             {onResolveHelp && (
-              <button onClick={onResolveHelp} style={resolveButton}>
+              <button
+                type="button"
+                onClick={onResolveHelp}
+                style={resolveButton}
+              >
                 Mark Help Resolved
               </button>
             )}
@@ -88,20 +138,105 @@ export default function TeacherReviewCenter({
         <div style={feedbackBox}>
           <h2>💬 Teacher Feedback</h2>
 
-          <div style={bankGrid}>
-            {commentBank.map((comment) => (
-              <button
-                key={comment}
-                onClick={() => addComment(comment)}
-                style={bankButton}
+          <div style={dropdownGrid}>
+            <div style={dropdownGroup}>
+              <label style={label}>R - Restate Feedback</label>
+              <select
+                value=""
+                onChange={(event) => handleDropdown(event.target.value)}
+                style={selectBox}
               >
-                {comment}
-              </button>
-            ))}
+                <option value="">Choose feedback...</option>
+                {restateComments.map((comment) => (
+                  <option key={comment} value={comment}>
+                    {comment}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={dropdownGroup}>
+              <label style={label}>A - Answer Feedback</label>
+              <select
+                value=""
+                onChange={(event) => handleDropdown(event.target.value)}
+                style={selectBox}
+              >
+                <option value="">Choose feedback...</option>
+                {answerComments.map((comment) => (
+                  <option key={comment} value={comment}>
+                    {comment}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={dropdownGroup}>
+              <label style={label}>C - Cite Evidence Feedback</label>
+              <select
+                value=""
+                onChange={(event) => handleDropdown(event.target.value)}
+                style={selectBox}
+              >
+                <option value="">Choose feedback...</option>
+                {citeComments.map((comment) => (
+                  <option key={comment} value={comment}>
+                    {comment}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={dropdownGroup}>
+              <label style={label}>E - Explain Feedback</label>
+              <select
+                value=""
+                onChange={(event) => handleDropdown(event.target.value)}
+                style={selectBox}
+              >
+                <option value="">Choose feedback...</option>
+                {explainComments.map((comment) => (
+                  <option key={comment} value={comment}>
+                    {comment}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={dropdownGroup}>
+              <label style={label}>S - Sum Up Feedback</label>
+              <select
+                value=""
+                onChange={(event) => handleDropdown(event.target.value)}
+                style={selectBox}
+              >
+                <option value="">Choose feedback...</option>
+                {sumComments.map((comment) => (
+                  <option key={comment} value={comment}>
+                    {comment}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={dropdownGroup}>
+              <label style={label}>General Writing Feedback</label>
+              <select
+                value=""
+                onChange={(event) => handleDropdown(event.target.value)}
+                style={selectBox}
+              >
+                <option value="">Choose feedback...</option>
+                {generalComments.map((comment) => (
+                  <option key={comment} value={comment}>
+                    {comment}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <textarea
-            placeholder="Type feedback, encouragement, or revision notes here..."
+            placeholder="Type your own feedback or choose feedback from the dropdowns above..."
             value={feedback}
             onChange={(event) => setFeedback(event.target.value)}
             style={textarea}
@@ -109,6 +244,7 @@ export default function TeacherReviewCenter({
 
           {onSaveFeedback && (
             <button
+              type="button"
               onClick={() => onSaveFeedback(feedback)}
               style={saveButton}
             >
@@ -120,6 +256,7 @@ export default function TeacherReviewCenter({
     </div>
   );
 }
+
 const page = {
   background: "#f5efe4",
   minHeight: "100vh",
@@ -170,24 +307,38 @@ const feedbackBox = {
   marginTop: 24,
 };
 
-const bankGrid = {
+const dropdownGrid = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  gap: 10,
+  gap: 14,
   marginBottom: 18,
 };
 
-const bankButton = {
+const dropdownGroup = {
+  background: "white",
+  border: "1px solid #d7dfd5",
+  borderRadius: 14,
+  padding: 14,
+};
+
+const label = {
+  display: "block",
+  fontSize: 17,
+  fontWeight: "bold",
+  marginBottom: 8,
+};
+
+const selectBox = {
+  width: "100%",
   padding: 12,
   borderRadius: 10,
-  cursor: "pointer",
   fontSize: 16,
-  textAlign: "left" as const,
+  cursor: "pointer",
 };
 
 const textarea = {
   width: "100%",
-  minHeight: 150,
+  minHeight: 170,
   padding: 16,
   fontSize: 18,
   borderRadius: 12,
