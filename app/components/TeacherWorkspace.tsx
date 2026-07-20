@@ -70,11 +70,16 @@ export default function TeacherWorkspace({
   ) {
     if (!reviewAssignment || !reviewWork) return;
 
+    const revisionRequested = Object.values(
+      needsRevision
+    ).some(Boolean);
+
     const updatedWork: StudentWork = {
       ...reviewWork,
       teacherFeedback: feedback,
       feedbackSeen: false,
       needsRevision,
+      approved: !revisionRequested,
     };
 
     saveStudentWork(
@@ -85,7 +90,11 @@ export default function TeacherWorkspace({
 
     setReviewWork(updatedWork);
 
-    alert("Feedback and revision requests saved.");
+    alert(
+      revisionRequested
+        ? "Feedback and revision requests saved."
+        : "Assignment approved!"
+    );
   }
 
   if (

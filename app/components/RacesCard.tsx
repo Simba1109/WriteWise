@@ -15,6 +15,7 @@ type Props = {
   hints: string[];
   isOpen: boolean;
   completed: boolean;
+  needsRevision?: boolean;
   value: string;
   onOpen: () => void;
   onChange: (part: PartKey, value: string) => void;
@@ -33,6 +34,7 @@ export default function RacesCard({
   hints,
   isOpen,
   completed,
+  needsRevision = false,
   value,
   onOpen,
   onChange,
@@ -51,10 +53,14 @@ export default function RacesCard({
     <div
       style={{
         background: color,
-        border: `4px solid ${dark}`,
+        border: needsRevision
+          ? "6px solid #d98200"
+          : `4px solid ${dark}`,
         borderRadius: 26,
         marginBottom: 24,
-        boxShadow: "0 8px 18px rgba(0,0,0,.12)",
+        boxShadow: needsRevision
+          ? "0 0 0 5px #fff1cf, 0 8px 18px rgba(0,0,0,.14)"
+          : "0 8px 18px rgba(0,0,0,.12)",
         overflow: "hidden",
       }}
     >
@@ -63,7 +69,7 @@ export default function RacesCard({
         style={{
           width: "100%",
           padding: 22,
-          background: dark,
+          background: needsRevision ? "#d98200" : dark,
           color: "white",
           border: "none",
           cursor: "pointer",
@@ -72,21 +78,28 @@ export default function RacesCard({
           fontWeight: "bold",
         }}
       >
-        {completed ? "✅" : "⬜"} {letter} - {title}
+        {needsRevision ? "🔄" : completed ? "✅" : "⬜"} {letter} - {title}
+
         <span style={{ float: "right" }}>
           {isOpen ? "▲" : "▼"}
         </span>
       </button>
 
+      {needsRevision && (
+        <div style={revisionMessage}>
+          <strong>🔄 Your teacher wants you to revise this section.</strong>
+          <div style={revisionDirections}>
+            Read the teacher feedback, make your changes, and improve your
+            writing.
+          </div>
+        </div>
+      )}
+
       {isOpen && (
         <div style={{ padding: 24 }}>
-          <p style={{ fontSize: 21, fontWeight: "bold" }}>
-            {subtitle}
-          </p>
+          <p style={{ fontSize: 21, fontWeight: "bold" }}>{subtitle}</p>
 
-          <div style={hintBox}>
-            💡 {sectionHint}
-          </div>
+          <div style={hintBox}>💡 {sectionHint}</div>
 
           <select
             defaultValue=""
@@ -98,15 +111,10 @@ export default function RacesCard({
             }}
             style={selectBox}
           >
-            <option value="">
-              Sentence starter dropdown
-            </option>
+            <option value="">Sentence starter dropdown</option>
 
             {starters.map((starter) => (
-              <option
-                key={starter}
-                value={starter}
-              >
+              <option key={starter} value={starter}>
                 {starter}
               </option>
             ))}
@@ -122,25 +130,19 @@ export default function RacesCard({
             }}
             style={selectBox}
           >
-            <option value="">
-              Vocabulary dropdown
-            </option>
+            <option value="">Vocabulary dropdown</option>
 
             {vocabulary.length === 0 ? (
-              <option value="">
-                No vocabulary added yet
-              </option>
+              <option value="">No vocabulary added yet</option>
             ) : (
               vocabulary.map((word) => (
-                <option
-                  key={word}
-                  value={word}
-                >
+                <option key={word} value={word}>
                   {word}
                 </option>
               ))
             )}
           </select>
+
           {partKey === "cite" && (
             <div style={quoteBox}>
               <strong>Quote Bank</strong>
@@ -168,17 +170,35 @@ export default function RacesCard({
             value={value}
             onFocus={activateCard}
             onClick={activateCard}
-            onChange={(e) =>
-              onChange(partKey, e.target.value)
-            }
+            onChange={(e) => onChange(partKey, e.target.value)}
             placeholder={`Write your ${title} sentence here...`}
-            style={textArea}
+            style={{
+              ...textArea,
+              border: needsRevision
+                ? "4px solid #d98200"
+                : "2px solid #b8b8b8",
+            }}
           />
         </div>
       )}
     </div>
   );
 }
+
+const revisionMessage = {
+  background: "#fff4d6",
+  color: "#7a4300",
+  borderBottom: "3px solid #d98200",
+  padding: 18,
+  fontSize: 20,
+  lineHeight: 1.4,
+};
+
+const revisionDirections = {
+  marginTop: 8,
+  fontSize: 18,
+  fontWeight: "normal",
+};
 
 const hintBox = {
   background: "white",
@@ -204,6 +224,7 @@ const quoteBox = {
   marginBottom: 16,
   fontSize: 18,
 };
+
 const quoteButton = {
   width: "100%",
   display: "block",
@@ -221,4 +242,5 @@ const textArea = {
   padding: 18,
   fontSize: 21,
   borderRadius: 16,
+  boxSizing: "border-box" as const,
 };

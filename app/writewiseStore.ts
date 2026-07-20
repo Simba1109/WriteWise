@@ -19,7 +19,10 @@ export const blankStudentWork: StudentWork = {
   helpMessage: "",
   teacherFeedback: "",
   feedbackSeen: true,
-  needsRevision: blankRevisionRequests,
+  needsRevision: {
+    ...blankRevisionRequests,
+  },
+  approved: false,
 };
 
 export function cleanStudentWork(work: StudentWork): StudentWork {
@@ -30,11 +33,17 @@ export function cleanStudentWork(work: StudentWork): StudentWork {
       ...blankRevisionRequests,
       ...(work.needsRevision || {}),
     },
+    approved: work.approved ?? false,
   };
 }
 
-export function getStudentWorkKey(studentName: string, assignmentId: string) {
-  return `writewise-work-${studentName.trim().toLowerCase()}-${assignmentId}`;
+export function getStudentWorkKey(
+  studentName: string,
+  assignmentId: string
+) {
+  return `writewise-work-${studentName
+    .trim()
+    .toLowerCase()}-${assignmentId}`;
 }
 
 export function loadStudentWork(
@@ -44,7 +53,9 @@ export function loadStudentWork(
   const key = getStudentWorkKey(studentName, assignmentId);
   const saved = localStorage.getItem(key);
 
-  if (!saved) return cleanStudentWork(blankStudentWork);
+  if (!saved) {
+    return cleanStudentWork(blankStudentWork);
+  }
 
   try {
     return cleanStudentWork(JSON.parse(saved));
@@ -59,5 +70,9 @@ export function saveStudentWork(
   work: StudentWork
 ) {
   const key = getStudentWorkKey(studentName, assignmentId);
-  localStorage.setItem(key, JSON.stringify(cleanStudentWork(work)));
+
+  localStorage.setItem(
+    key,
+    JSON.stringify(cleanStudentWork(work))
+  );
 }

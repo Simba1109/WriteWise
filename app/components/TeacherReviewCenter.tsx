@@ -119,6 +119,8 @@ export default function TeacherReviewCenter({
     work.sum,
   ].filter((part) => part.trim().length > 0).length;
 
+  const revisionRequested = Object.values(revision).some(Boolean);
+
   function addComment(
     comment: string,
     color: FeedbackColor
@@ -236,8 +238,7 @@ export default function TeacherReviewCenter({
             toggleRevision("explain", checked)
           }
         />
-
-        <TeacherReviewCard
+                <TeacherReviewCard
           title="S - Sum Up"
           value={work.sum}
           needsRevision={revision.sum}
@@ -476,231 +477,238 @@ export default function TeacherReviewCenter({
 
               <p style={description}>
                 Overall effort, grammar, and revision
-              </p>
+                </p>
 
-              <select
-                value=""
-                onChange={(event) =>
-                  handleDropdown(
-                    event.target.value,
-                    "gray"
-                  )
-                }
-                style={selectBox}
-              >
-                <option value="">
-                  Choose General feedback...
-                </option>
+<select
+  value=""
+  onChange={(event) =>
+    handleDropdown(
+      event.target.value,
+      "gray"
+    )
+  }
+  style={selectBox}
+>
+  <option value="">
+    Choose General feedback...
+  </option>
 
-                {generalComments.map((comment) => (
-                  <option
-                    key={comment}
-                    value={comment}
-                  >
-                    {comment}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+  {generalComments.map((comment) => (
+    <option
+      key={comment}
+      value={comment}
+    >
+      {comment}
+    </option>
+  ))}
+</select>
+</div>
+</div>
 
-          <textarea
-            placeholder="Teacher feedback will appear here. You can also type your own feedback..."
-            value={feedback}
-            onChange={(event) =>
-              setFeedback(event.target.value)
-            }
-            style={textarea}
-          />
+<textarea
+placeholder="Teacher feedback will appear here. You can also type your own feedback..."
+value={feedback}
+onChange={(event) =>
+setFeedback(event.target.value)
+}
+style={textarea}
+/>
 
-          {onSaveFeedback && (
-            <button
-              type="button"
-              onClick={() =>
-                onSaveFeedback(feedback, revision)
-              }
-              style={saveButton}
-            >
-              💾 Save Feedback and Revision Requests
-            </button>
-          )}
-        </div>
-      </section>
-    </div>
-  );
+{onSaveFeedback && (
+<button
+type="button"
+onClick={() =>
+  onSaveFeedback(feedback, revision)
+}
+style={{
+  ...saveButton,
+  background: revisionRequested
+    ? "#d98c00"
+    : "#2e7d32",
+}}
+>
+{revisionRequested
+  ? "🔄 Save Feedback & Request Revisions"
+  : "⭐ Approve Assignment"}
+</button>
+)}
+</div>
+</section>
+</div>
+);
 }
 
 const page = {
-  background: "#f5efe4",
-  minHeight: "100vh",
-  padding: 32,
-  fontFamily: "Arial",
+background: "#f5efe4",
+minHeight: "100vh",
+padding: 32,
+fontFamily: "Arial",
 };
 
 const container = {
-  maxWidth: 950,
-  margin: "20px auto",
-  background: "white",
-  padding: 34,
-  borderRadius: 28,
-  boxShadow: "0 10px 24px rgba(0,0,0,.08)",
+maxWidth: 950,
+margin: "20px auto",
+background: "white",
+padding: 34,
+borderRadius: 28,
+boxShadow: "0 10px 24px rgba(0,0,0,.08)",
 };
 
 const mainTitle = {
-  fontSize: 38,
-  marginTop: 0,
-  marginBottom: 18,
+fontSize: 38,
+marginTop: 0,
+marginBottom: 18,
 };
 
 const studentHeader = {
-  background: "#f7f3ea",
-  border: "2px solid #d8c8a8",
-  borderRadius: 20,
-  padding: 18,
-  marginBottom: 20,
+background: "#f7f3ea",
+border: "2px solid #d8c8a8",
+borderRadius: 20,
+padding: 18,
+marginBottom: 20,
 };
 
 const assignmentText = {
-  fontSize: 20,
-  margin: "8px 0 0",
+fontSize: 20,
+margin: "8px 0 0",
 };
 
 const progressBox = {
-  background: "#eef5ec",
-  border: "2px solid #c9d9c6",
-  padding: 18,
-  borderRadius: 16,
-  fontSize: 20,
-  marginBottom: 24,
-  fontWeight: "bold",
+background: "#eef5ec",
+border: "2px solid #c9d9c6",
+padding: 18,
+borderRadius: 16,
+fontSize: 20,
+marginBottom: 24,
+fontWeight: "bold",
 };
 
 const helpBox = {
-  background: "#fbeaea",
-  border: "3px solid #d9534f",
-  color: "#8a1f1f",
-  padding: 18,
-  borderRadius: 16,
-  fontSize: 20,
-  marginBottom: 24,
+background: "#fbeaea",
+border: "3px solid #d9534f",
+color: "#8a1f1f",
+padding: 18,
+borderRadius: 16,
+fontSize: 20,
+marginBottom: 24,
 };
 
 const helpMessageStyle = {
-  margin: "12px 0 0",
-  whiteSpace: "pre-wrap" as const,
+margin: "12px 0 0",
+whiteSpace: "pre-wrap" as const,
 };
 
 const resolveButton = {
-  width: "100%",
-  marginTop: 14,
-  padding: 16,
-  fontSize: 18,
-  borderRadius: 14,
-  cursor: "pointer",
+width: "100%",
+marginTop: 14,
+padding: 16,
+fontSize: 18,
+borderRadius: 14,
+cursor: "pointer",
 };
 
 const finalParagraphCard = {
-  background: "white",
-  border: "2px solid #ddd",
-  borderRadius: 18,
-  padding: 20,
-  marginBottom: 18,
+background: "white",
+border: "2px solid #ddd",
+borderRadius: 18,
+padding: 20,
+marginBottom: 18,
 };
 
 const finalParagraphTitle = {
-  marginTop: 0,
-  marginBottom: 12,
+marginTop: 0,
+marginBottom: 12,
 };
 
 const finalParagraphText = {
-  minHeight: 90,
-  padding: 14,
-  background: "#f8f8f8",
-  borderRadius: 12,
-  whiteSpace: "pre-wrap" as const,
-  fontSize: 18,
+minHeight: 90,
+padding: 14,
+background: "#f8f8f8",
+borderRadius: 12,
+whiteSpace: "pre-wrap" as const,
+fontSize: 18,
 };
 
 const feedbackBox = {
-  background: "#eef5ec",
-  border: "3px solid #6b8f71",
-  borderRadius: 24,
-  padding: 24,
-  marginTop: 28,
-  boxShadow: "0 8px 18px rgba(0,0,0,.08)",
+background: "#eef5ec",
+border: "3px solid #6b8f71",
+borderRadius: 24,
+padding: 24,
+marginTop: 28,
+boxShadow: "0 8px 18px rgba(0,0,0,.08)",
 };
 
 const feedbackTitle = {
-  margin: 0,
-  fontSize: 30,
+margin: 0,
+fontSize: 30,
 };
 
 const feedbackSubtitle = {
-  marginTop: 8,
-  marginBottom: 18,
-  fontSize: 17,
-  color: "#4b5d4a",
+marginTop: 8,
+marginBottom: 18,
+fontSize: 17,
+color: "#4b5d4a",
 };
 
 const dropdownGrid = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(280px, 1fr))",
-  gap: 16,
-  marginBottom: 20,
+display: "grid",
+gridTemplateColumns:
+"repeat(auto-fit, minmax(280px, 1fr))",
+gap: 16,
+marginBottom: 20,
 };
 
 const dropdownGroup = {
-  border: "2px solid rgba(0,0,0,.08)",
-  borderRadius: 18,
-  padding: 16,
-  boxShadow: "0 4px 10px rgba(0,0,0,.05)",
+border: "2px solid rgba(0,0,0,.08)",
+borderRadius: 18,
+padding: 16,
+boxShadow: "0 4px 10px rgba(0,0,0,.05)",
 };
 
 const label = {
-  display: "block",
-  fontSize: 19,
-  fontWeight: "bold",
-  marginBottom: 4,
+display: "block",
+fontSize: 19,
+fontWeight: "bold",
+marginBottom: 4,
 };
 
 const description = {
-  margin: "0 0 10px",
-  fontSize: 14,
-  color: "#555",
+margin: "0 0 10px",
+fontSize: 14,
+color: "#555",
 };
 
 const selectBox = {
-  width: "100%",
-  padding: 13,
-  borderRadius: 12,
-  fontSize: 16,
-  cursor: "pointer",
-  border: "1px solid #bbb",
-  background: "white",
+width: "100%",
+padding: 13,
+borderRadius: 12,
+fontSize: 16,
+cursor: "pointer",
+border: "1px solid #bbb",
+background: "white",
 };
 
 const textarea = {
-  width: "100%",
-  minHeight: 190,
-  padding: 18,
-  fontSize: 18,
-  borderRadius: 16,
-  border: "2px solid #c9d9c6",
-  background: "#fffdf4",
-  boxShadow: "inset 0 2px 6px rgba(0,0,0,.06)",
-  boxSizing: "border-box" as const,
+width: "100%",
+minHeight: 190,
+padding: 18,
+fontSize: 18,
+borderRadius: 16,
+border: "2px solid #c9d9c6",
+background: "#fffdf4",
+boxShadow: "inset 0 2px 6px rgba(0,0,0,.06)",
+boxSizing: "border-box" as const,
 };
 
 const saveButton = {
-  width: "100%",
-  marginTop: 16,
-  padding: 18,
-  fontSize: 22,
-  borderRadius: 16,
-  cursor: "pointer",
-  background: "#6b8f71",
-  color: "white",
-  fontWeight: "bold",
-  border: "none",
+width: "100%",
+marginTop: 16,
+padding: 18,
+fontSize: 22,
+borderRadius: 16,
+cursor: "pointer",
+background: "#6b8f71",
+color: "white",
+fontWeight: "bold",
+border: "none",
 };
