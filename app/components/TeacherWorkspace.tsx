@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { Assignment, StudentWork } from "../types";
+import type {
+  Assignment,
+  RevisionRequests,
+  StudentWork,
+} from "../types";
 import TeacherDashboard from "./TeacherDashboard";
 import LessonBuilder from "./LessonBuilder";
 import TeacherReviewCenter from "./TeacherReviewCenter";
@@ -18,14 +22,18 @@ export default function TeacherWorkspace({
   onBack,
   onPublishAssignment,
 }: Props) {
-  const [view, setView] = useState<"dashboard" | "builder" | "review">(
-    "dashboard"
-  );
+  const [view, setView] = useState<
+    "dashboard" | "builder" | "review"
+  >("dashboard");
 
-  const [reviewStudentName, setReviewStudentName] = useState("");
+  const [reviewStudentName, setReviewStudentName] =
+    useState("");
+
   const [reviewAssignment, setReviewAssignment] =
     useState<Assignment | null>(null);
-  const [reviewWork, setReviewWork] = useState<StudentWork | null>(null);
+
+  const [reviewWork, setReviewWork] =
+    useState<StudentWork | null>(null);
 
   function openStudentWork(
     studentName: string,
@@ -47,29 +55,50 @@ export default function TeacherWorkspace({
       helpMessage: "",
     };
 
-    saveStudentWork(reviewStudentName, reviewAssignment.id, updatedWork);
+    saveStudentWork(
+      reviewStudentName,
+      reviewAssignment.id,
+      updatedWork
+    );
+
     setReviewWork(updatedWork);
   }
 
-  function saveFeedback(feedback: string) {
+  function saveFeedback(
+    feedback: string,
+    needsRevision: RevisionRequests
+  ) {
     if (!reviewAssignment || !reviewWork) return;
 
     const updatedWork: StudentWork = {
       ...reviewWork,
       teacherFeedback: feedback,
       feedbackSeen: false,
+      needsRevision,
     };
 
-    saveStudentWork(reviewStudentName, reviewAssignment.id, updatedWork);
+    saveStudentWork(
+      reviewStudentName,
+      reviewAssignment.id,
+      updatedWork
+    );
+
     setReviewWork(updatedWork);
 
-    alert("Feedback saved.");
+    alert("Feedback and revision requests saved.");
   }
 
-  if (view === "review" && reviewWork && reviewAssignment) {
+  if (
+    view === "review" &&
+    reviewWork &&
+    reviewAssignment
+  ) {
     return (
       <main style={page}>
-        <button onClick={() => setView("dashboard")} style={backButton}>
+        <button
+          onClick={() => setView("dashboard")}
+          style={backButton}
+        >
           ← Back to Dashboard
         </button>
 
@@ -91,14 +120,22 @@ export default function TeacherWorkspace({
       </button>
 
       <section style={container}>
-        <h1 style={{ fontSize: 44 }}>Teacher Workspace</h1>
+        <h1 style={{ fontSize: 44 }}>
+          Teacher Workspace
+        </h1>
 
         <div style={tabs}>
-          <button onClick={() => setView("dashboard")} style={tabButton}>
+          <button
+            onClick={() => setView("dashboard")}
+            style={tabButton}
+          >
             📊 Dashboard
           </button>
 
-          <button onClick={() => setView("builder")} style={tabButton}>
+          <button
+            onClick={() => setView("builder")}
+            style={tabButton}
+          >
             📝 Assignments
           </button>
         </div>

@@ -3,17 +3,21 @@
 type Props = {
   title: string;
   value: string;
+  needsRevision: boolean;
+  onNeedsRevisionChange: (checked: boolean) => void;
 };
 
 export default function TeacherReviewCard({
   title,
   value,
+  needsRevision,
+  onNeedsRevisionChange,
 }: Props) {
   return (
     <div
       style={{
         background: "white",
-        border: "2px solid #ddd",
+        border: needsRevision ? "3px solid #d97706" : "2px solid #ddd",
         borderRadius: 18,
         padding: 20,
         marginBottom: 18,
@@ -42,6 +46,36 @@ export default function TeacherReviewCard({
           ? value
           : "Student has not completed this section yet."}
       </div>
+
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginTop: 16,
+          padding: 12,
+          background: needsRevision ? "#fff7ed" : "#f9fafb",
+          borderRadius: 12,
+          cursor: "pointer",
+          fontSize: 17,
+          fontWeight: 700,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={needsRevision}
+          onChange={(event) =>
+            onNeedsRevisionChange(event.target.checked)
+          }
+          style={{
+            width: 20,
+            height: 20,
+            cursor: "pointer",
+          }}
+        />
+
+        Needs Revision
+      </label>
     </div>
   );
 }

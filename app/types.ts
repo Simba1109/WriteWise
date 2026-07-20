@@ -24,6 +24,14 @@ export type Assignment = {
   isPublished?: boolean;
 };
 
+export type RevisionRequests = {
+  restate: boolean;
+  answer: boolean;
+  cite: boolean;
+  explain: boolean;
+  sum: boolean;
+};
+
 export type StudentWork = {
   restate: string;
   answer: string;
@@ -35,6 +43,8 @@ export type StudentWork = {
   helpMessage?: string;
   teacherFeedback?: string;
   feedbackSeen?: boolean;
+  needsRevision?: RevisionRequests;
+  approved?: boolean;
 };
 
 export type StudentSession = {

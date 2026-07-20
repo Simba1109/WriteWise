@@ -1,4 +1,12 @@
-import type { StudentWork } from "./types";
+import type { RevisionRequests, StudentWork } from "./types";
+
+export const blankRevisionRequests: RevisionRequests = {
+  restate: false,
+  answer: false,
+  cite: false,
+  explain: false,
+  sum: false,
+};
 
 export const blankStudentWork: StudentWork = {
   restate: "",
@@ -11,12 +19,17 @@ export const blankStudentWork: StudentWork = {
   helpMessage: "",
   teacherFeedback: "",
   feedbackSeen: true,
+  needsRevision: blankRevisionRequests,
 };
 
 export function cleanStudentWork(work: StudentWork): StudentWork {
   return {
     ...blankStudentWork,
     ...work,
+    needsRevision: {
+      ...blankRevisionRequests,
+      ...(work.needsRevision || {}),
+    },
   };
 }
 
@@ -31,12 +44,12 @@ export function loadStudentWork(
   const key = getStudentWorkKey(studentName, assignmentId);
   const saved = localStorage.getItem(key);
 
-  if (!saved) return blankStudentWork;
+  if (!saved) return cleanStudentWork(blankStudentWork);
 
   try {
     return cleanStudentWork(JSON.parse(saved));
   } catch {
-    return blankStudentWork;
+    return cleanStudentWork(blankStudentWork);
   }
 }
 

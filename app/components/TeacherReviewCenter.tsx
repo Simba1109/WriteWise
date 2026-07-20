@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { StudentWork } from "../types";
+import type {
+  RevisionRequests,
+  StudentWork,
+} from "../types";
 import TeacherReviewCard from "./TeacherReviewCard";
 
 type Props = {
@@ -9,7 +12,10 @@ type Props = {
   assignmentTitle: string;
   work: StudentWork;
   onResolveHelp?: () => void;
-  onSaveFeedback?: (feedback: string) => void;
+  onSaveFeedback?: (
+    feedback: string,
+    needsRevision: RevisionRequests
+  ) => void;
 };
 
 const restateComments = [
@@ -67,7 +73,13 @@ const generalComments = [
   "Nice revision.",
 ];
 
-type FeedbackColor = "blue" | "green" | "gold" | "purple" | "red" | "gray";
+type FeedbackColor =
+  | "blue"
+  | "green"
+  | "gold"
+  | "purple"
+  | "red"
+  | "gray";
 
 function getFeedbackPrefix(color: FeedbackColor) {
   if (color === "blue") return "🔵";
@@ -75,8 +87,10 @@ function getFeedbackPrefix(color: FeedbackColor) {
   if (color === "gold") return "🟡";
   if (color === "purple") return "🟣";
   if (color === "red") return "🔴";
+
   return "⚙️";
 }
+
 export default function TeacherReviewCenter({
   studentName,
   assignmentTitle,
@@ -84,7 +98,18 @@ export default function TeacherReviewCenter({
   onResolveHelp,
   onSaveFeedback,
 }: Props) {
-  const [feedback, setFeedback] = useState(work.teacherFeedback || "");
+  const [feedback, setFeedback] = useState(
+    work.teacherFeedback || ""
+  );
+
+  const [revision, setRevision] =
+    useState<RevisionRequests>({
+      restate: work.needsRevision?.restate ?? false,
+      answer: work.needsRevision?.answer ?? false,
+      cite: work.needsRevision?.cite ?? false,
+      explain: work.needsRevision?.explain ?? false,
+      sum: work.needsRevision?.sum ?? false,
+    });
 
   const completedParts = [
     work.restate,
@@ -94,10 +119,15 @@ export default function TeacherReviewCenter({
     work.sum,
   ].filter((part) => part.trim().length > 0).length;
 
-  function addComment(comment: string, color: FeedbackColor) {
+  function addComment(
+    comment: string,
+    color: FeedbackColor
+  ) {
     if (!comment) return;
 
-    const formattedComment = `${getFeedbackPrefix(color)} ${comment}`;
+    const formattedComment = `${getFeedbackPrefix(
+      color
+    )} ${comment}`;
 
     setFeedback((previous) =>
       previous.trim().length === 0
@@ -106,24 +136,53 @@ export default function TeacherReviewCenter({
     );
   }
 
-  function handleDropdown(value: string, color: FeedbackColor) {
+  function handleDropdown(
+    value: string,
+    color: FeedbackColor
+  ) {
     if (!value) return;
+
     addComment(value, color);
+  }
+
+  function toggleRevision(
+    section: keyof RevisionRequests,
+    checked: boolean
+  ) {
+    setRevision((previous) => ({
+      ...previous,
+      [section]: checked,
+    }));
   }
 
   return (
     <div style={page}>
       <section style={container}>
-        <h1 style={mainTitle}>Teacher Review Center</h1>
+        <h1 style={mainTitle}>
+          Teacher Review Center
+        </h1>
 
         <div style={studentHeader}>
-          <h2 style={{ margin: 0 }}>{studentName || "Student"}</h2>
-          <p style={assignmentText}>{assignmentTitle}</p>
+          <h2 style={{ margin: 0 }}>
+            {studentName || "Student"}
+          </h2>
+
+          <p style={assignmentText}>
+            {assignmentTitle}
+          </p>
         </div>
 
         {work.needsHelp && (
           <div style={helpBox}>
-            <strong>🆘 Student requested help.</strong>
+            <strong>
+              🆘 Student requested help.
+            </strong>
+
+            {work.helpMessage && (
+              <p style={helpMessageStyle}>
+                {work.helpMessage}
+              </p>
+            )}
 
             {onResolveHelp && (
               <button
@@ -138,122 +197,306 @@ export default function TeacherReviewCenter({
         )}
 
         <div style={progressBox}>
-          ✅ Progress: {completedParts} of 5 R.A.C.E.S. sections completed
+          ✅ Progress: {completedParts} of 5
+          R.A.C.E.S. sections completed
         </div>
 
-        <TeacherReviewCard title="R - Restate" value={work.restate} />
-        <TeacherReviewCard title="A - Answer" value={work.answer} />
-        <TeacherReviewCard title="C - Cite Evidence" value={work.cite} />
-        <TeacherReviewCard title="E - Explain" value={work.explain} />
-        <TeacherReviewCard title="S - Sum Up" value={work.sum} />
-
         <TeacherReviewCard
-          title="Final Paragraph"
-          value={work.finalParagraph}
+          title="R - Restate"
+          value={work.restate}
+          needsRevision={revision.restate}
+          onNeedsRevisionChange={(checked) =>
+            toggleRevision("restate", checked)
+          }
         />
 
+        <TeacherReviewCard
+          title="A - Answer"
+          value={work.answer}
+          needsRevision={revision.answer}
+          onNeedsRevisionChange={(checked) =>
+            toggleRevision("answer", checked)
+          }
+        />
+
+        <TeacherReviewCard
+          title="C - Cite Evidence"
+          value={work.cite}
+          needsRevision={revision.cite}
+          onNeedsRevisionChange={(checked) =>
+            toggleRevision("cite", checked)
+          }
+        />
+
+        <TeacherReviewCard
+          title="E - Explain"
+          value={work.explain}
+          needsRevision={revision.explain}
+          onNeedsRevisionChange={(checked) =>
+            toggleRevision("explain", checked)
+          }
+        />
+
+        <TeacherReviewCard
+          title="S - Sum Up"
+          value={work.sum}
+          needsRevision={revision.sum}
+          onNeedsRevisionChange={(checked) =>
+            toggleRevision("sum", checked)
+          }
+        />
+
+        <div style={finalParagraphCard}>
+          <h3 style={finalParagraphTitle}>
+            Final Paragraph
+          </h3>
+
+          <div style={finalParagraphText}>
+            {work.finalParagraph.trim().length > 0
+              ? work.finalParagraph
+              : "Student has not completed the final paragraph yet."}
+          </div>
+        </div>
+
         <div style={feedbackBox}>
-          <h2 style={feedbackTitle}>💬 Feedback Builder</h2>
+          <h2 style={feedbackTitle}>
+            💬 Feedback Builder
+          </h2>
+
           <p style={feedbackSubtitle}>
-            Choose comments from the dropdowns or type your own feedback.
+            Choose comments from the dropdowns or
+            type your own feedback.
           </p>
 
           <div style={dropdownGrid}>
-            <div style={{ ...dropdownGroup, background: "#eaf5ff" }}>
-              <label style={label}>🔵 R — Restate</label>
-              <p style={description}>Prompt in the student's own words</p>
+            <div
+              style={{
+                ...dropdownGroup,
+                background: "#eaf5ff",
+              }}
+            >
+              <label style={label}>
+                🔵 R — Restate
+              </label>
+
+              <p style={description}>
+                Prompt in the student's own words
+              </p>
+
               <select
                 value=""
-                onChange={(event) => handleDropdown(event.target.value, "blue")}
+                onChange={(event) =>
+                  handleDropdown(
+                    event.target.value,
+                    "blue"
+                  )
+                }
                 style={selectBox}
               >
-                <option value="">Choose Restate feedback...</option>
+                <option value="">
+                  Choose Restate feedback...
+                </option>
+
                 {restateComments.map((comment) => (
-                  <option key={comment} value={comment}>
+                  <option
+                    key={comment}
+                    value={comment}
+                  >
                     {comment}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div style={{ ...dropdownGroup, background: "#edf8ef" }}>
-              <label style={label}>🟢 A — Answer</label>
-              <p style={description}>Clear answer to the prompt</p>
+            <div
+              style={{
+                ...dropdownGroup,
+                background: "#edf8ef",
+              }}
+            >
+              <label style={label}>
+                🟢 A — Answer
+              </label>
+
+              <p style={description}>
+                Clear answer to the prompt
+              </p>
+
               <select
                 value=""
-                onChange={(event) => handleDropdown(event.target.value, "green")}
+                onChange={(event) =>
+                  handleDropdown(
+                    event.target.value,
+                    "green"
+                  )
+                }
                 style={selectBox}
               >
-                <option value="">Choose Answer feedback...</option>
+                <option value="">
+                  Choose Answer feedback...
+                </option>
+
                 {answerComments.map((comment) => (
-                  <option key={comment} value={comment}>
+                  <option
+                    key={comment}
+                    value={comment}
+                  >
                     {comment}
                   </option>
                 ))}
               </select>
             </div>
-            <div style={{ ...dropdownGroup, background: "#fff6d8" }}>
-              <label style={label}>🟡 C — Cite Evidence</label>
-              <p style={description}>Text evidence from the passage</p>
+
+            <div
+              style={{
+                ...dropdownGroup,
+                background: "#fff6d8",
+              }}
+            >
+              <label style={label}>
+                🟡 C — Cite Evidence
+              </label>
+
+              <p style={description}>
+                Text evidence from the passage
+              </p>
+
               <select
                 value=""
-                onChange={(event) => handleDropdown(event.target.value, "gold")}
+                onChange={(event) =>
+                  handleDropdown(
+                    event.target.value,
+                    "gold"
+                  )
+                }
                 style={selectBox}
               >
-                <option value="">Choose Cite feedback...</option>
+                <option value="">
+                  Choose Cite feedback...
+                </option>
+
                 {citeComments.map((comment) => (
-                  <option key={comment} value={comment}>
+                  <option
+                    key={comment}
+                    value={comment}
+                  >
                     {comment}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div style={{ ...dropdownGroup, background: "#f1eaff" }}>
-              <label style={label}>🟣 E — Explain</label>
-              <p style={description}>Student reasoning and explanation</p>
+            <div
+              style={{
+                ...dropdownGroup,
+                background: "#f1eaff",
+              }}
+            >
+              <label style={label}>
+                🟣 E — Explain
+              </label>
+
+              <p style={description}>
+                Student reasoning and explanation
+              </p>
+
               <select
                 value=""
-                onChange={(event) => handleDropdown(event.target.value, "purple")}
+                onChange={(event) =>
+                  handleDropdown(
+                    event.target.value,
+                    "purple"
+                  )
+                }
                 style={selectBox}
               >
-                <option value="">Choose Explain feedback...</option>
+                <option value="">
+                  Choose Explain feedback...
+                </option>
+
                 {explainComments.map((comment) => (
-                  <option key={comment} value={comment}>
+                  <option
+                    key={comment}
+                    value={comment}
+                  >
                     {comment}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div style={{ ...dropdownGroup, background: "#ffecec" }}>
-              <label style={label}>🔴 S — Sum Up</label>
-              <p style={description}>Conclusion or final thought</p>
+            <div
+              style={{
+                ...dropdownGroup,
+                background: "#ffecec",
+              }}
+            >
+              <label style={label}>
+                🔴 S — Sum Up
+              </label>
+
+              <p style={description}>
+                Conclusion or final thought
+              </p>
+
               <select
                 value=""
-                onChange={(event) => handleDropdown(event.target.value, "red")}
+                onChange={(event) =>
+                  handleDropdown(
+                    event.target.value,
+                    "red"
+                  )
+                }
                 style={selectBox}
               >
-                <option value="">Choose Sum Up feedback...</option>
+                <option value="">
+                  Choose Sum Up feedback...
+                </option>
+
                 {sumComments.map((comment) => (
-                  <option key={comment} value={comment}>
+                  <option
+                    key={comment}
+                    value={comment}
+                  >
                     {comment}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div style={{ ...dropdownGroup, background: "#f3f3f3" }}>
-              <label style={label}>⚙️ General Writing</label>
-              <p style={description}>Overall effort, grammar, and revision</p>
+            <div
+              style={{
+                ...dropdownGroup,
+                background: "#f3f3f3",
+              }}
+            >
+              <label style={label}>
+                ⚙️ General Writing
+              </label>
+
+              <p style={description}>
+                Overall effort, grammar, and revision
+              </p>
+
               <select
                 value=""
-                onChange={(event) => handleDropdown(event.target.value, "gray")}
+                onChange={(event) =>
+                  handleDropdown(
+                    event.target.value,
+                    "gray"
+                  )
+                }
                 style={selectBox}
               >
-                <option value="">Choose General feedback...</option>
+                <option value="">
+                  Choose General feedback...
+                </option>
+
                 {generalComments.map((comment) => (
-                  <option key={comment} value={comment}>
+                  <option
+                    key={comment}
+                    value={comment}
+                  >
                     {comment}
                   </option>
                 ))}
@@ -264,17 +507,21 @@ export default function TeacherReviewCenter({
           <textarea
             placeholder="Teacher feedback will appear here. You can also type your own feedback..."
             value={feedback}
-            onChange={(event) => setFeedback(event.target.value)}
+            onChange={(event) =>
+              setFeedback(event.target.value)
+            }
             style={textarea}
           />
 
           {onSaveFeedback && (
             <button
               type="button"
-              onClick={() => onSaveFeedback(feedback)}
+              onClick={() =>
+                onSaveFeedback(feedback, revision)
+              }
               style={saveButton}
             >
-              💾 Save Feedback
+              💾 Save Feedback and Revision Requests
             </button>
           )}
         </div>
@@ -338,6 +585,11 @@ const helpBox = {
   marginBottom: 24,
 };
 
+const helpMessageStyle = {
+  margin: "12px 0 0",
+  whiteSpace: "pre-wrap" as const,
+};
+
 const resolveButton = {
   width: "100%",
   marginTop: 14,
@@ -345,6 +597,28 @@ const resolveButton = {
   fontSize: 18,
   borderRadius: 14,
   cursor: "pointer",
+};
+
+const finalParagraphCard = {
+  background: "white",
+  border: "2px solid #ddd",
+  borderRadius: 18,
+  padding: 20,
+  marginBottom: 18,
+};
+
+const finalParagraphTitle = {
+  marginTop: 0,
+  marginBottom: 12,
+};
+
+const finalParagraphText = {
+  minHeight: 90,
+  padding: 14,
+  background: "#f8f8f8",
+  borderRadius: 12,
+  whiteSpace: "pre-wrap" as const,
+  fontSize: 18,
 };
 
 const feedbackBox = {
@@ -370,7 +644,8 @@ const feedbackSubtitle = {
 
 const dropdownGrid = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  gridTemplateColumns:
+    "repeat(auto-fit, minmax(280px, 1fr))",
   gap: 16,
   marginBottom: 20,
 };
@@ -414,6 +689,7 @@ const textarea = {
   border: "2px solid #c9d9c6",
   background: "#fffdf4",
   boxShadow: "inset 0 2px 6px rgba(0,0,0,.06)",
+  boxSizing: "border-box" as const,
 };
 
 const saveButton = {
